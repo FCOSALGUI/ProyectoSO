@@ -23,11 +23,13 @@ struct proceso{
     int direccion = -1;
     int bit = 0;
     int turnaround = 0;
+    int paginas;
 };
+
+
 
 void cargar(float &bytes, float &id, int (&M)[128], int (&S)[256],vector<proceso> &procesos){
     proceso Nuevo(id); //Creacion de un nuevo proceso, con su respectivo ID proveido por el usuario
-    procesos.push_back(Nuevo); //Se mete al vector el proceso creado
     int pagina = ceil(bytes/16); //Variable que calcula la cantidad de marcos de pagina necesarios para el proceso, siempre redondeando para mayor espacio
     bool free;//Variable auxiliar para revisar si existe espacio en memoria
     for(int i = 0; i < 128;i++){ //Loop que recorre toda la memoria y en caso de encontrar el espacio necesario, guarda el proceso en la memoria
@@ -44,6 +46,12 @@ void cargar(float &bytes, float &id, int (&M)[128], int (&S)[256],vector<proceso
                 for(int j = i;j<pagina;j++){
                     M[j] = 1;
                 }
+                Nuevo.direccion = i; //Indica la direccion desde donde empieza
+                Nuevo.bit = 1; //Indica que se ha guardado en memoria principal
+                Nuevo.paginas = pagina; //Se guarda la cantidad de paginas que usa
+                procesos.push_back(Nuevo); //Se mete al vector el proceso creado
+                //Output del proceso cargado
+                cout << "Asignar " << bytes << " bytes al proceso " << id << "\nSe asignaron los marcos de pagina " << i << "-" <<i+pagina << " al proceso "<< id << endl;
                break;
             }
         }
