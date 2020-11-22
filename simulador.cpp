@@ -19,24 +19,51 @@ struct proceso{
         int bit = 0;
         int turnaround = 0;
     }
-    float id = 0;
-    int direccion = -1;
-    int bit = 0;
-    int turnaround = 0;
+    float id;
+    int turnaround;
     int paginas;
 };
 
+//Funcion que hace el swapping con politica de reemplazo FIFO
+void swap_FIFO(int pagina, float id, int (&M)[128], int (&S)[256],queue<proceso> &procesos, vector<proceso> &swapping){
+    proceso temp = procesos.front();
+    while(pagina>0){
+        if(pagina - temp.paginas<0){
+            for(int i = 0; i<128; i++){
+                if(M[i] == temp.id){
+                    M[i] = id;
+                    pagina--;
+                }
+                if(pagina == 0)
+                    break;
+            }
+        }
+        else{
+            for(int i = 0; i<128; i++){
+                if(M[i] == temp.id){
+                        M[i] = id;
+                        pagina--;
+                    }
+                    if(pagina == 0)
+                        break;
+            }
+        }
+    }
+}
+//Funcion que hace el swapping con politica de reemplazo LRU
+void swap_LRU(int pagina, float id, int (&M)[128], int (&S)[256],queue<proceso> &procesos, vector<proceso> &swapping){
 
+}
 
-void cargar(float &bytes, float &id, int (&M)[128], int (&S)[256],vector<proceso> &procesos){
+void cargar(float &bytes, float &id, int (&M)[128], int (&S)[256],queue<proceso> &procesos, int politica, vector<proceso> &swapping){
     proceso Nuevo(id); //Creacion de un nuevo proceso, con su respectivo ID proveido por el usuario
     int pagina = ceil(bytes/16); //Variable que calcula la cantidad de marcos de pagina necesarios para el proceso, siempre redondeando para mayor espacio
     bool free;//Variable auxiliar para revisar si existe espacio en memoria
     for(int i = 0; i < 128;i++){ //Loop que recorre toda la memoria y en caso de encontrar el espacio necesario, guarda el proceso en la memoria
         free = true;
-        if(M[i] == 0 && i + pagina < 127){ //Revisa desde donde se encuentra el espacio vacio mas las paginas necesarias que no se pase de la memoria
-            for(int j = i; j<= i + pagina;j++){//En caso de haber encontrado un espacio, revisa que las paginas siguientes esten vacias tambien
-                if(M[j] == 1){
+        if(M[i] == 0 && i + pagina <= 128){ //Revisa desde donde se encuentra el espacio vacio mas las paginas necesarias que no se pase de la memoria
+            for(int j = i; j< i + pagina;j++){//En caso de haber encontrado un espacio, revisa que las paginas siguientes esten vacias tambien
+                if(M[j] >= 0){
                     free = false;
                     break;
                 }
@@ -44,18 +71,17 @@ void cargar(float &bytes, float &id, int (&M)[128], int (&S)[256],vector<proceso
             }
             if(free){//Si se ha encontra el espacio libre suficiente para las paginas necesarias se carga el proceso a memoria
                 for(int j = i;j<pagina;j++){
-                    M[j] = 1;
+                    M[j] = id;
                 }
-                Nuevo.direccion = i; //Indica la direccion desde donde empieza
-                Nuevo.bit = 1; //Indica que se ha guardado en memoria principal
                 Nuevo.paginas = pagina; //Se guarda la cantidad de paginas que usa
-                procesos.push_back(Nuevo); //Se mete al vector el proceso creado
+                procesos.push(Nuevo); //Se mete a la fila el proceso creado
                 //Output del proceso cargado
-                cout << "Asignar " << bytes << " bytes al proceso " << id << "\nSe asignaron los marcos de pagina " << i << "-" <<i+pagina << " al proceso "<< id << endl;
+                cout << "Asignar " << bytes << " bytes al proceso " << id << "\nSe asignaron los marcos de pagina " << i << "-" <<i+pagina-1 << " al proceso "<< id << endl;
                break;
             }
         }
-        if(i == 127){//En caso de que no se pueda meter el proceso, se hace swapping 
+        if(i == 127){//En caso de que no se pueda meter el proceso, se hace swapping
+            //El 1 indica politica de reemplazo FIFO y el 2 LRU 
             //swap();
         }
     }
@@ -88,18 +114,20 @@ int main(){
     int S[256]; //Arreglo auxiliar simulara el area de una memoria real para swapping en FIFO
     int S2[256]; //Arreglo auxiliar simulara el area de una memoria real para swapping en LRU
 
-    vector<proceso> FIFO; //Vector que guarda los procesos para la politica FIFO
-    vector<proceso> LRU; // Vector que guarda los procesos para la politica LRU
+    queue<proceso> FIFO; // Queue que guarda los procesos para la politica FIFO
+    queue<proceso> LRU; // Queue que guarda los procesos para la politica LRU
+    vector<proceso> SFIFO; //Dichos vectores guardaran a los procesos que vayan siendo mandados a swapping
+    vector<proceso> SLRU; 
 
     //Funcion que inicializa la memoria en 0, pues aun no ha llegado ningun proceso
     for(int i =0;i<128;i++){
-        M[i] = 0;
-        M2[i] = 0; 
+        M[i] = -1;
+        M2[i] = -1; 
     }
     //Funcion que incializa el area de disco reservada para swapping en 0
     for(int i = 0; i < 256;i++){
-        S[i] = 0;
-        S2[i] = 0;
+        S[i] = -1;
+        S2[i] = -1;
     }
 
     char process;
@@ -112,8 +140,8 @@ int main(){
     switch (process)
     {
     case 'P':
-        cargar(bytes,id, M, S, FIFO);
-        cargar(bytes,id, M2, S2, LRU);
+        cargar(bytes,id, M, S, FIFO, 1, SFIFO);
+        cargar(bytes,id, M2, S2, LRU, 2, SLRU);
         break;
     case 'A':
         break;
