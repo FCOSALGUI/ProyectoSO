@@ -26,8 +26,8 @@ struct proceso{
 
 //Funcion que hace el swapping con politica de reemplazo FIFO
 void swap_FIFO(int pagina, float id, int (&M)[128], int (&S)[256],queue<proceso> &procesos, vector<proceso> &swapping){
-    proceso temp = procesos.front();
     while(pagina>0){
+        proceso temp = procesos.front();
         if(pagina - temp.paginas<0){
             for(int i = 0; i<128; i++){
                 if(M[i] == temp.id){
@@ -41,13 +41,14 @@ void swap_FIFO(int pagina, float id, int (&M)[128], int (&S)[256],queue<proceso>
         else{
             for(int i = 0; i<128; i++){
                 if(M[i] == temp.id){
-                        M[i] = id;
-                        pagina--;
-                    }
-                    if(pagina == 0)
-                        break;
+                    M[i] = id;
+                    pagina--;
+                }
             }
         }
+        //Checar si el temp ID ya esta en el vector
+        swapping.push_back(temp);
+        procesos.pop();
     }
 }
 //Funcion que hace el swapping con politica de reemplazo LRU
