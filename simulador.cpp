@@ -9,16 +9,24 @@ Francisco Salgado Guizar A01365047
 Gabriel Gomez Novau A01720009
 */
 
+
+//Structura que tendra los datos de cada proceso
+struct proceso{
+    int id;
+    int direccion;
+    int bit;
+};
+
+
 int M[128]; //Arreglo que simula la memoria real
 int S[256]; //Arreglo auxiliar simulara el area de una memoria real para swapping
 
 void cargar(float &bytes, float &id){
-    float pagina = ceil(bytes/16); //Variable que calcula la cantidad de marcos de pagina necesarios para el proceso, siempre redondeando para mayor espacio
+    int pagina = ceil(bytes/16); //Variable que calcula la cantidad de marcos de pagina necesarios para el proceso, siempre redondeando para mayor espacio
     for(int i = 0; i < 128;i++){
-        if(M[i] == 0 && 127-pagina > 0){
+        if(M[i] == 0 && 127-pagina > 0 && M[pagina+i]!=0){
             for(int j = i; j<pagina;j++){
                 M[j] = 1;
-                cout << j;
             }
             break;
         }
