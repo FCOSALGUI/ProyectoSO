@@ -26,29 +26,54 @@ struct proceso{
 
 //Funcion que hace el swapping con politica de reemplazo FIFO
 void swap_FIFO(int pagina, float id, int (&M)[128], int (&S)[256],queue<proceso> &procesos, vector<proceso> &swapping){
-    while(pagina>0){
-        proceso temp = procesos.front();
-        if(pagina - temp.paginas<0){
-            for(int i = 0; i<128; i++){
+    while(pagina>0){//mientras que no se acabe de cargar el proceso en swap a la memoria real no se acaba
+        proceso temp = procesos.front(); //se crea un objeto con las caracatersiticas del queue de fifo
+        if(pagina - temp.paginas<0){//si se ocupa quitar nadamas un pedazo del proceso en memoria nadamas se le quitarian unas paginas y se quedaria el proceso en la queue
+            for(int i = 0; i<128; i++){//va a checar por toda la memoria cada vez que encuentre el proceso fisrt in para swapiarlo por el nuevo entrante
                 if(M[i] == temp.id){
                     M[i] = id;
-                    pagina--;
+                    for (int j = 0; j < 256; j++) {
+                        if (S[j] == -1) {
+                            S[j] = temp.id;
+                            break;
+                        }
+                    }
+                    pagina--; //se resta cada vez que se puede meter una pagina del nuevo proceso a memoria real
                 }
-                if(pagina == 0)
+                if (pagina == 0) {//si ya se acabo de meter todo a memoria se sale del loop
                     break;
+                }
             }
         }
-        else{
+        else{//si el proceso nuevo ocupa quitar todo el proceso first in
             for(int i = 0; i<128; i++){
                 if(M[i] == temp.id){
                     M[i] = id;
                     pagina--;
+                    for (int j = 0; j < 256; j++) {
+                        if (S[j] == -1) {
+                            S[j] = temp.id;
+                            break;
+                        }
+                    }
                 }
             }
+            //Checar si el temp ID ya esta en el vector
+            int tam = swapping.size();// checar tamano del vector que tiene todos los procesos previamente usados
+            bool found = false;// bandera que ayuda a saber si ya estaba dentro del vector
+            for (int i = 0; i < tam; i++) {
+                if (swapping[i].id == temp.id) {//aqui sacariasmos 
+                    found = true;
+                    swapping[i] = swapping[tam - 1];//cambias el objeto por el de atras para despues borrar el de atras
+                    swapping.pop_back();
+                }
+            }
+            if (!found) {// si no estaba el proceso se mete a al vector para futuras referencias
+                swapping.push_back(temp);
+            }
+            procesos.pop();//como se ocupan todas la paginas del proceso first in se borra del la queue
         }
-        //Checar si el temp ID ya esta en el vector
-        swapping.push_back(temp);
-        procesos.pop();
+        
     }
 }
 //Funcion que hace el swapping con politica de reemplazo LRU
@@ -62,7 +87,7 @@ void cargar(float &bytes, float &id, int (&M)[128], int (&S)[256],queue<proceso>
     bool free;//Variable auxiliar para revisar si existe espacio en memoria
     for(int i = 0; i < 128;i++){ //Loop que recorre toda la memoria y en caso de encontrar el espacio necesario, guarda el proceso en la memoria
         free = true;
-        if(M[i] == 0 && i + pagina <= 128){ //Revisa desde donde se encuentra el espacio vacio mas las paginas necesarias que no se pase de la memoria
+        if(M[i] == -1 && i + pagina <= 128){ //Revisa desde donde se encuentra el espacio vacio mas las paginas necesarias que no se pase de la memoria
             for(int j = i; j< i + pagina;j++){//En caso de haber encontrado un espacio, revisa que las paginas siguientes esten vacias tambien
                 if(M[j] >= 0){
                     free = false;
