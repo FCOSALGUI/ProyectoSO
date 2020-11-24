@@ -25,6 +25,8 @@ struct proceso{
     int paginas;
 };
 
+float time = 0;//variable para ir manejando el tiempo que llevan los procesos
+
 //Funcion que hace el swapping con politica de reemplazo FIFO
 void swap_FIFO(int pagina, float id, int (&M)[128], int (&S)[256],queue<proceso> &procesos, vector<proceso> &swapping){
     while(pagina>0){//mientras que no se acabe de cargar el proceso en swap a la memoria real no se acaba
@@ -136,10 +138,10 @@ void cargar(float &bytes, float &id, int (&M)[128], int (&S)[256],queue<proceso>
 
 
 int main(){
-    int M[128]; //Arreglo que simula la memoria real para politica FIFO
-    int M2[128]; //Arreglo que simula la memoria real para politica LRU
-    int S[256]; //Arreglo auxiliar simulara el area de una memoria real para swapping en FIFO
-    int S2[256]; //Arreglo auxiliar simulara el area de una memoria real para swapping en LRU
+    int M[128][3]; //Arreglo que simula la memoria real para politica FIFO
+    int M2[128][3]; //Arreglo que simula la memoria real para politica LRU
+    int S[256][3]; //Arreglo auxiliar simulara el area de una memoria real para swapping en FIFO
+    int S2[256][3]; //Arreglo auxiliar simulara el area de una memoria real para swapping en LRU
 
     queue<proceso> FIFO; // Queue que guarda los procesos para la politica FIFO
     queue<proceso> LRU; // Queue que guarda los procesos para la politica LRU
@@ -148,13 +150,21 @@ int main(){
 
     //Funcion que inicializa la memoria en 0, pues aun no ha llegado ningun proceso
     for(int i =0;i<128;i++){
-        M[i] = -1;
-        M2[i] = -1; 
+        M[i][0] = -1;//id
+        M[i][1] = -1;//direccion en memoria
+        M[i][2] = -1;//timestamp
+        M2[i][0] = -1;//id
+        M2[i][1] = -1;//direccion en memoria
+        M2[i][2] = -1;//timestamp
     }
     //Funcion que incializa el area de disco reservada para swapping en 0
     for(int i = 0; i < 256;i++){
-        S[i] = -1;
-        S2[i] = -1;
+        S[i][0] = -1;//id
+        S[i][1] = -1;//direccion en memoria
+        S[i][2] = -1;//timestamp
+        S2[i][0] = -1;//id
+        S2[i][1] = -1;//direccion en memoria
+        S2[i][2] = -1;//timestamp
     }
 
     char process;
