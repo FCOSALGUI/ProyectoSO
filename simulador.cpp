@@ -45,7 +45,7 @@ void swap_FIFO(int pagina, float id, int (&M)[128], int (&S)[256],queue<proceso>
                 }
             }
         }
-        else{//si el proceso nuevo ocupa quitar todo el proceso first in
+        else{//si el proceso nuevo ocupa quitar todo el proceso first in 
             for(int i = 0; i<128; i++){
                 if(M[i] == temp.id){
                     M[i] = id;
