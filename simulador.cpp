@@ -2,6 +2,7 @@
 
 using namespace std;
 /*
+Version Timestamp
 Simulador de memoria virtual 
 Sistemas Operativos
 Miembros:
