@@ -36,7 +36,7 @@ vector<proceso> liberados; //vector que guarda a los procesos que se vayan liber
 void swap_creados(int pagina, float id, float (&M)[128][4], float (&S)[256][4], int politica, bool creado){
     int cont = 0;// se usara para ir contando las paginas nuevas
     while (pagina > 0) {//mientras que no se acabe de cargar el proceso en swap a la memoria real no se acaba
-        float temporal = 9999;// para comparar el timestamp y ver cuales es el first in en memoria real
+        float temporal = 999999;// para comparar el timestamp y ver cuales es el first in en memoria real
         int tempoIndice = -1;//para saber que indice es el que tiene el timestamp mas bajo
         for (int i = 0; i < 128; i++) {
             if (M[i][2] < temporal) {//se checa caul es el first in the todas las paginas
@@ -129,28 +129,13 @@ void cargar(float bytes, float id, float (&M)[128][4], float (&S)[256][4],int po
             pagina = 0;
         }
         if(pagina == 0){
-            for(int x = 0; x<128;x++){
+            /*for(int x = 0; x<128;x++){
                 //cout << "ID del proceso: " << M[x][0] << endl;
                 cout << "Numero del pagina del proceso " << M[x][0] << " es " << M[x][1]<<  endl;
                 cout << "Timestamp del proceso " << M[x][0] << " es " << M[x][2]<< endl;
                 cout << "Direccion de una pagina del proceso " << M[x][0] << " es " << M[x][3]<< endl;
-            }
+            }*/
 
-            //Output del proceso cargado
-            cout << "Asignar " << bytes << " bytes al proceso " << id << "\nSe asignaron los marcos de pagina ";
-
-            for(int k = 0; k<127;k++){
-                if(M[k][0] == id){
-                    cout << k;
-                    while(M[k][0] == M[k+1][0]){ 
-                        k++;
-                        //cout << M[k][3] << " ";
-                    }
-                    cout << "-" << k << ", " << endl;
-                }
-                break;
-            }
-            cout << endl;
             break;
         }
     }
@@ -159,21 +144,52 @@ void cargar(float bytes, float id, float (&M)[128][4], float (&S)[256][4],int po
 void FIFO(int direccion, int id, int modificacion, float (&M)[128][4], float (&S)[256][4]){
     int pagina = floor(direccion/16);
     int real = 0;
-    for(int i = 0; i < 128;i++){
-        if(M[i][0] == id && M[i][1] == pagina){
-            real = (direccion%16) + i * 16;
+    int menor = 999999;
+    int ind = 0;
+    for(int k = 0; k < 128;k++){
+        if(M[k][0] == id && M[k][1] == pagina){
+            real = (direccion%16) + k * 16;
             cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
+            tiempo+=0.1;
+            break;
         }
 
-        if(i == 127){
+        if(k == 127){
             for(int i = 0; i<agregados.size();i++){
                 if(agregados[i].idp == id){
                     agregados[i].pagefaultsFIFO++;
                 }
             }
             for(int i = 0; i < 256; i++) {
-                if(S[i][0] == id){
+                if(S[i][0] == id && S[i][1] == pagina){
+                    for(int j = 0;j<128;j++){
+                        if(M[j][2] < menor){
+                            menor = M[j][2];
+                            ind = j;
+                        }
+                        for (int x = 0; x < 256; x++) {//Se busca encontrar un espacio en memoria virtual para poder guardar los procesos swapeados
+                            if (S[x][0] == -1) {
+                                S[x][0] = id;//el id del proceso swapeado
+                                S[x][1] = M[ind][1]; //el numero de pagina del proceso
+                                S[x][2] = tiempo;//el timestamp al momento de swapear
+                                tiempo++;//se incrementa el tiempo por swapear a out
+                                S[x][3] = M[ind][3];//se ve cual es la direccion en memoria
 
+                                M[ind][0] = S[i][0];
+                                M[ind][1] = S[i][1];
+                                M[ind][2] = tiempo;
+                                tiempo++;
+                                M[ind][3] = S[i][3];
+
+                                S[i][0] = -1;
+                                S[i][1] = -1;
+                                S[i][2] = -1;
+                                S[i][3] = -1;
+                                break;
+                            }
+                        }
+
+                    }
                 }
             }
         }
@@ -227,7 +243,29 @@ int main(){
             cin >> bytes;
             cin >> id;
             cargar(bytes,id, M, S, 1);
+             //Output del proceso cargado
+            cout << "Asignar " << bytes << " bytes al proceso " << id << "\nSe asignaron los marcos de pagina ";
+            for(int k = 0; k<127;k++){
+                if(M[k][0] == id){
+                    cout << k;
+                    while(M[k][0] == M[k+1][0]){ 
+                        k++;
+                    }
+                    cout << "-" << k << ", " << endl;
+                }
+            }
             cargar(bytes,id, M2, S2, 2);
+             //Output del proceso cargado
+            cout << "Asignar " << bytes << " bytes al proceso " << id << "\nSe asignaron los marcos de pagina ";
+            for(int k = 0; k<127;k++){
+                if(M[k][0] == id){
+                    cout << k;
+                    while(M[k][0] == M[k+1][0]){ 
+                        k++;
+                    }
+                    cout << "-" << k << ", " << endl;
+                }
+            }
             break;
         case 'A':
             cin >> direccion;
