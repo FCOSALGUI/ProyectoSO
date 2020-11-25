@@ -14,14 +14,16 @@ Gabriel Gomez Novau A01720009
 //Structura que tendra los datos de cada proceso
 struct proceso{
     //Constructor que inicializa los valores del objeto
-    proceso(float idt, float timestampt){
-        float id = idt;
+    proceso(int idt, float timestampt){
+        int idp = idt;
         float timestamp = timestampt;
     }
     int paginas;
-    int pagefaultsLRU;
-    int pagefaultsFIFO;
+    int pagefaultsLRU = 0;
+    int pagefaultsFIFO = 0;
     int turnaround;
+    int idp;
+    float timestapt;
 };
 
 float tiempo = 0;//variable para ir manejando el tiempo que llevan los procesos FIFO
@@ -30,10 +32,9 @@ float tiempo2 = 0;//variable para ir manejando el tiempo que llevan los procesos
 vector<proceso> agregados;//vector que guardara los procesos agregados a memoria para luego revisarlos 
 vector<proceso> liberados; //vector que guarda a los procesos que se vayan liberando de memoria para luego usar como estadisticas de turnaround y pagefaults
 
-//Funcion que hace el swapping con politica de reemplazo FIFO
-void swap_FIFO(int pagina, float id, float (&M)[128][4], float (&S)[256][4]){
+//Funcion que hace el swapping unicamente para procesos recien creados que no quepan en memoria principal
+void swap_creados(int pagina, float id, float (&M)[128][4], float (&S)[256][4], int politica, bool creado){
     int cont = 0;// se usara para ir contando las paginas nuevas
-    bool creado = false;// se empieza como que no hay un proceso asi en el vector de procesos en el sistema
     while (pagina > 0) {//mientras que no se acabe de cargar el proceso en swap a la memoria real no se acaba
         float temporal = 9999;// para comparar el timestamp y ver cuales es el first in en memoria real
         int tempoIndice = -1;//para saber que indice es el que tiene el timestamp mas bajo
@@ -47,19 +48,39 @@ void swap_FIFO(int pagina, float id, float (&M)[128][4], float (&S)[256][4]){
             if (S[i][0] == -1) {
                 S[i][0] = id;//el id del proceso swapeado
                 S[i][1] = M[tempoIndice][1]; //el numero de pagina del proceso
-                S[i][2] = tiempo;//el timestamp al momento de swapear
-                tiempo++;//se incrementa el tiempo por swapear a out
+                if(politica == 1) {
+                    S[i][2] = tiempo;//el timestamp al momento de swapear
+                    tiempo++;//se incrementa el tiempo por swapear a out
+                }
+                else {
+                    S[i][2] = tiempo2;//el timestamp al momento de swapear
+                    tiempo2++;//se incrementa el tiempo por swapear a out
+                }
+                
                 S[i][3] = M[tempoIndice][3];//se ve cual es la direccion en memoria
             }
         }
         M[tempoIndice][0] = id;//se cambia el id al nuevo proceso
         M[tempoIndice][1] = cont;//se asigna el numero de pagina del proceso
         cont++;
-        M[tempoIndice][2] = tiempo;//time stap de la pagina
-        tiempo++;
+        if(politica == 1) {
+            M[tempoIndice][2] = tiempo;//time stap de la pagina
+            tiempo++;
+            if(creado){
+              agregados.back().pagefaultsFIFO++;
+            }
+        }
+        else
+        {
+            M[tempoIndice][2] = tiempo2;//time stap de la pagina
+            tiempo2++;
+            if(creado){
+                agregados.back().pagefaultsLRU++;
+            }
+        }
+        
         if (!creado) {//se checa si es el proceso es nuevo o ya fue agregado al vector de agregados
             proceso temp(id, tiempo);
-            agregados.push_back(temp);//se agrega el nuevo proceso creado
             temp.paginas = pagina;
             creado = true;
             agregados.push_back(temp);//se agrega el nuevo proceso creado
@@ -69,78 +90,90 @@ void swap_FIFO(int pagina, float id, float (&M)[128][4], float (&S)[256][4]){
     }
     
 }
-//Funcion que hace el swapping con politica de reemplazo LRU
-void swap_LRU(int pagina, float id, int (&M)[128][4], int (&S)[256][4]){
-    while (pagina > 0) {
-        
-    }
-}
 
-void cargar(float &bytes, float &id, float (&M)[128][4], float (&S)[256][4],int politica){
-    proceso Nuevo(id,tiempo); //Creacion de un nuevo proceso, con su respectivo ID proveido por el usuario
+void cargar(float bytes, float id, float (&M)[128][4], float (&S)[256][4],int politica){
+    bool creado = false;
     int pagina = ceil(bytes/16); //Variable que calcula la cantidad de marcos de pagina necesarios para el proceso, siempre redondeando para mayor espacio
-    bool free;//Variable auxiliar para revisar si existe espacio en memoria
+    int tempPaginas = pagina;
     int cont = 0;
     for(int i = 0; i < 128;i++){ //Loop que recorre toda la memoria y en caso de encontrar el espacio necesario, guarda el proceso en la memoria
-        free = true;
-        if(M[i][0] == -1 && i + pagina <= 128){ //Revisa desde donde se encuentra el espacio vacio mas las paginas necesarias que no se pase de la memoria
-            for(int j = i; j< i + pagina;j++){//En caso de haber encontrado un espacio, revisa que las paginas siguientes esten vacias tambien
-                if(M[j][0] >= 0){
-                    free = false;
-                    break;
-                }
-                    
+        if(M[i][0] == -1){//Revisa desde donde se encuentra el espacio vacio mas las paginas necesarias que no se pase de la memoria
+            M[i][0] = id;
+            M[i][1] = cont;
+            cont++;
+            if (politica == 1) {
+                M[i][2] = tiempo;
+                tiempo++;
             }
-            if(free){//Si se ha encontra el espacio libre suficiente para las paginas necesarias se carga el proceso a memoria
-                for(int j = i;j<pagina;j++){
-                    M[j][0] = id;
-                    M[j][1] = cont;
-                    cont++;
-                    if (politica == 1) {
-                        M[j][2] = tiempo;
-                        tiempo++;
-                    }
-                    else {
-                        M[j][2] = tiempo2;
-                        tiempo2++;
-                    }
-                    M[j][3] = j;
-                    
-                }
-                Nuevo.paginas = pagina; //Se guarda la cantidad de paginas que usa
+            else {
+                M[i][2] = tiempo2;
+                tiempo2++;
+            }
+            M[i][3] = i;
+            pagina--;
+            if(!creado){
+                proceso Nuevo(id,tiempo); //Creacion de un nuevo proceso, con su respectivo ID proveido por el usuario
+                Nuevo.paginas = tempPaginas;
                 agregados.push_back(Nuevo);
-                //Output del proceso cargado
-                cout << "Asignar " << bytes << " bytes al proceso " << id << "\nSe asignaron los marcos de pagina " << i << "-" <<i+pagina-1 << " al proceso "<< id << endl;
-               break;
+                creado = true;
             }
         }
         if(i == 127){//En caso de que no se pueda meter el proceso, se hace swapping
             //El 1 indica politica de reemplazo FIFO y el 2 LRU 
-            //swap();
+            if(politica == 1){
+                swap_creados(pagina, id, M, S,politica, creado);
+            }
+            else{
+                swap_creados(pagina,id,M,S,politica, creado);
+            }
+            pagina = 0;
+        }
+        if(pagina == 0){
+            //Output del proceso cargado
+            cout << "Asignar " << bytes << " bytes al proceso " << id << "\nSe asignaron los marcos de pagina ";
+            int contadortemp = 0;
+            int temporalindice = 0;
+            for(int k = 0; k<127;k++){
+                contadortemp = 0;
+                if(M[k][0] == id){
+                    temporalindice = M[k][0];
+                    cout << M[k][0];
+                    while(M[k][0] == M[k+1][0]){ 
+                        k++;
+                        contadortemp++; 
+                    }
+                    cout << "Temporalindice + contadortemp: " << temporalindice+contadortemp;
+                }
+            }
+            cout << endl;
+            break;
         }
     }
 }
 
+void FIFO(int direccion, int id, int modificacion, float (&M)[128][4], float (&S)[256][4]){
+    int pagina = floor(direccion/16);
+    int real = 0;
+    for(int i = 0; i < 128;i++){
+        if(M[i][0] == id && M[i][1] == pagina){
+            real = (direccion%16) + i * 16;
+            cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
+        }
 
-//Funcion que se encarga de leer el input del usuario y determinar el proceso que quiere llevar a cabo
-/*void lectura(char process, int bytes, int id){
-    switch (process)
-    {
-    case 'P':
-        break;
-    case 'A':
-        break;
-    case 'L':
-        break;
-    case 'C':
-        break;
-    case 'E':
-        break;
-    default:
-        break;
+        if(i == 127){
+            for(int i = 0; i<agregados.size();i++){
+                if(agregados[i].idp == id){
+                    agregados[i].pagefaultsFIFO++;
+                }
+            }
+            for(int i = 0; i < 256; i++) {
+                if(S[i][0] == id){
+
+                }
+            }
+        }
     }
-}*/
-
+}
 
 int main(){
     float M[128][4]; //Arreglo que simula la memoria real para politica FIFO
@@ -176,33 +209,38 @@ int main(){
         S2[i][3] = -1;//direccion en memoria
     }
 
+    bool finish = false;
     char process;
-    float bytes = 0, id = 0;
+    float bytes = 0, id = 0, mod = 0, direccion = 0, modificacion = 0;
+    while(!finish){
 
-    cin >> process;
-    cin >> bytes;
-    cin >> id;
+        cin >> process;
 
-    switch (process)
-    {
-    case 'P':
-        cargar(bytes,id, M, S, 1);
-        cargar(bytes,id, M2, S2, 2);
-        break;
-    case 'A':
-        break;
-    case 'L':
-        break;
-    case 'C':
-        break;
-    case 'F':
-        break;
-    case 'E':
-        break;
-    default:
-        break;
-    } 
+        switch (process)
+        {
+        case 'P':
+            cin >> bytes;
+            cin >> id;
+            cargar(bytes,id, M, S, 1);
+            cargar(bytes,id, M2, S2, 2);
+            break;
+        case 'A':
+            cin >> direccion;
+            cin >> id;
+            cin >> modificacion;
+            break;
+        case 'L':
+            break;
+        case 'C':
+            break;
+        case 'F':
+            break;
+        case 'E':
+            break;
+        default:
+            break;
+        } 
 
-    
+    }
     return EXIT_SUCCESS;
 }
