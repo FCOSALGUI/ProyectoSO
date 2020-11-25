@@ -59,13 +59,15 @@ void swap_FIFO(int pagina, float id, float (&M)[128][4], float (&S)[256][4]){
         tiempo++;
         if (!creado) {//se checa si es el proceso es nuevo o ya fue agregado al vector de agregados
             proceso temp(id, tiempo);
+            agregados.push_back(temp);//se agrega el nuevo proceso creado
             temp.paginas = pagina;
             creado = true;
+            agregados.push_back(temp);//se agrega el nuevo proceso creado
         }
         M[tempoIndice][3] = tempoIndice;// se asigna el la direccion de memoria
-        pagina--//se va ir a la siguiente pagina a cambiar
+        pagina--;//se va ir a la siguiente pagina a cambiar
     }
-    agregados.push_back(temp);//se agrega el nuevo proceso creado
+    
 }
 //Funcion que hace el swapping con politica de reemplazo LRU
 void swap_LRU(int pagina, float id, int (&M)[128][4], int (&S)[256][4]){
