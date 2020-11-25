@@ -129,21 +129,26 @@ void cargar(float bytes, float id, float (&M)[128][4], float (&S)[256][4],int po
             pagina = 0;
         }
         if(pagina == 0){
+            for(int x = 0; x<128;x++){
+                //cout << "ID del proceso: " << M[x][0] << endl;
+                cout << "Numero del pagina del proceso " << M[x][0] << " es " << M[x][1]<<  endl;
+                cout << "Timestamp del proceso " << M[x][0] << " es " << M[x][2]<< endl;
+                cout << "Direccion de una pagina del proceso " << M[x][0] << " es " << M[x][3]<< endl;
+            }
+
             //Output del proceso cargado
             cout << "Asignar " << bytes << " bytes al proceso " << id << "\nSe asignaron los marcos de pagina ";
-            int contadortemp = 0;
-            int temporalindice = 0;
+
             for(int k = 0; k<127;k++){
-                contadortemp = 0;
                 if(M[k][0] == id){
-                    temporalindice = M[k][0];
-                    cout << M[k][0];
+                    cout << k;
                     while(M[k][0] == M[k+1][0]){ 
                         k++;
-                        contadortemp++; 
+                        //cout << M[k][3] << " ";
                     }
-                    cout << "Temporalindice + contadortemp: " << temporalindice+contadortemp;
+                    cout << "-" << k << ", " << endl;
                 }
+                break;
             }
             cout << endl;
             break;
