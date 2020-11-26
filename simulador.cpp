@@ -39,14 +39,14 @@ void swap_creados(int pagina, float id, float (&M)[128][4], float (&S)[256][4], 
         float temporal = 999999;// para comparar el timestamp y ver cuales es el first in en memoria real
         int tempoIndice = -1;//para saber que indice es el que tiene el timestamp mas bajo
         for (int i = 0; i < 128; i++) {
-            if (M[i][2] < temporal) {//se checa caul es el first in the todas las paginas
+            if (M[i][2] < temporal) {//se checa cual es el first in the todas las paginas
                 temporal = M[i][2];
                 tempoIndice = i;
             }
         }
         for (int i = 0; i < 256; i++) {//Se busca encontrar un espacio en memoria virtual para poder guardar los procesos swapeados
             if (S[i][0] == -1) {
-                S[i][0] = id;//el id del proceso swapeado
+                S[i][0] = M[tempoIndice][0];//el id del proceso swapeado
                 S[i][1] = M[tempoIndice][1]; //el numero de pagina del proceso
                 if(politica == 1) {
                     S[i][2] = tiempo;//el timestamp al momento de swapear
@@ -58,6 +58,8 @@ void swap_creados(int pagina, float id, float (&M)[128][4], float (&S)[256][4], 
                 }
                 
                 S[i][3] = M[tempoIndice][3];//se ve cual es la direccion en memoria
+                cout << "Pagina " << S[i][1] << " del proceso " << S[i][0] << " swappeada al marco " << i << " del area de swapping" << endl; 
+                break;
             }
         }
         M[tempoIndice][0] = id;//se cambia el id al nuevo proceso
@@ -146,9 +148,13 @@ void FIFO(int direccion, int id, int modificacion, float (&M)[128][4], float (&S
     int real = 0;
     int menor = 999999;
     int ind = 0;
+    cout << "Obtener la direccion real correspondiente a la direccion virtual " << direccion << " del proceso " << id << endl;
     for(int k = 0; k < 128;k++){
         if(M[k][0] == id && M[k][1] == pagina){
             real = (direccion%16) + k * 16;
+            if(modificacion == 1){
+                cout << "y modificar dicha direccion" <<"\nPagina " << M[k][1] << " del proceso " << M[k][0]<< " modificada " << endl;
+            }
             cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
             tiempo+=0.1;
             break;
@@ -169,7 +175,7 @@ void FIFO(int direccion, int id, int modificacion, float (&M)[128][4], float (&S
                         }
                         for (int x = 0; x < 256; x++) {//Se busca encontrar un espacio en memoria virtual para poder guardar los procesos swapeados
                             if (S[x][0] == -1) {
-                                S[x][0] = id;//el id del proceso swapeado
+                                S[x][0] = M[ind][0];//el id del proceso swapeado
                                 S[x][1] = M[ind][1]; //el numero de pagina del proceso
                                 S[x][2] = tiempo;//el timestamp al momento de swapear
                                 tiempo++;//se incrementa el tiempo por swapear a out
@@ -185,10 +191,18 @@ void FIFO(int direccion, int id, int modificacion, float (&M)[128][4], float (&S
                                 S[i][1] = -1;
                                 S[i][2] = -1;
                                 S[i][3] = -1;
+
+                                cout << "Pagina " << S[x][1] << " del proceso " << S[x][0] << " swapeada al marco " << x << " del area de swapping" << endl;
+                                cout << "Se localizo la pagina " << M[ind][1] << " que estaba en la posicion " << i << " de swapping y cargo al marco " << ind << endl;
+                                real = (direccion%16) + k * 16;
+                                if(modificacion == 1){
+                                    cout << "y modificar dicha direccion" <<"\nPagina " << M[k][1] << " del proceso " << M[k][0]<< " modificada " << endl;
+                                }
+                                cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
+                                tiempo+=0.1;
                                 break;
                             }
                         }
-
                     }
                 }
             }
@@ -242,9 +256,10 @@ int main(){
         case 'P':
             cin >> bytes;
             cin >> id;
+            //Output del proceso generado
+            cout << "FIFO: Asignar " << bytes << " bytes al proceso " << id << endl;
             cargar(bytes,id, M, S, 1);
-             //Output del proceso cargado
-            cout << "Asignar " << bytes << " bytes al proceso " << id << "\nSe asignaron los marcos de pagina ";
+            cout << "Se asignaron los marcos de pagina ";
             for(int k = 0; k<127;k++){
                 if(M[k][0] == id){
                     cout << k;
@@ -254,9 +269,10 @@ int main(){
                     cout << "-" << k << ", " << endl;
                 }
             }
+            //Output del proceso cargado
+            cout << "LRU: Asignar " << bytes << " bytes al proceso " << id << endl;
             cargar(bytes,id, M2, S2, 2);
-             //Output del proceso cargado
-            cout << "Asignar " << bytes << " bytes al proceso " << id << "\nSe asignaron los marcos de pagina ";
+            cout << "Se asignaron los marcos de pagina ";
             for(int k = 0; k<127;k++){
                 if(M[k][0] == id){
                     cout << k;
@@ -271,6 +287,7 @@ int main(){
             cin >> direccion;
             cin >> id;
             cin >> modificacion;
+            FIFO(direccion, id, modificacion, M, S);
             break;
         case 'L':
             break;
