@@ -129,10 +129,10 @@ void cargar(float bytes, float id, float(&M)[128][4], float(&S)[256][4], int pol
                 proceso Nuevo(id, tiempo); //Creacion de un nuevo proceso, con su respectivo ID proveido por el usuario
                 Nuevo.paginas = tempPaginas;
                 if (politica == 1) {
-                    agregados.push_back(temp);//se agrega el nuevo proceso creado
+                    agregados.push_back(Nuevo);//se agrega el nuevo proceso creado
                 }
                 else {
-                    agregados2.push_back(temp);//se agrega el nuevo proceso creado
+                    agregados2.push_back(Nuevo);//se agrega el nuevo proceso creado
                 }
                 creado = true;
             }
