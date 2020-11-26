@@ -364,6 +364,9 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
         if (politica == 1) {//si es FIFO
             if (agregados[i].idp == id) {//se checa el id para saber cual es el que se borro y luego se actualiza su turnaround time
                 agregados[i].turnaroundFIFO = tiempo - agregados[i].timestamp;
+                liberados.push_back(agregados[i]);
+                agregados[i] = agregados[agregados.size() - 1];
+                agregados.pop_back();
             }
         }
         else{//si es LRU
