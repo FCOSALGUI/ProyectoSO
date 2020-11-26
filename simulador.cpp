@@ -273,8 +273,8 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
 
                                 cout << "Pagina " << S[x][1] << " del proceso " << S[x][0] << " swapeada al marco " << x << " del area de swapping" << endl;
                                 cout << "Se localizo la pagina " << M[ind][1] << " que estaba en la posicion " << i << " de swapping y cargo al marco " << ind << endl;
-                                real = (direccion % 16) + k * 16;
-                                if (modificacion == 1) {
+                                real = (direccion % 16) + k * 16;//se busca la direccion real de proceso
+                                if (modificacion == 1) {//para saber si se modifico algo y desplegar que paso
                                     cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
                                 }
                                 cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
@@ -292,83 +292,82 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
 
 void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
     cout << "liberar los marcos de paginas ocupados por el proceso: " << id << endl;;
-    vector<int> vect;
-    for (int i = 0; i < 128; i++) {
+    vector<int> vect;//se hace un vector para guardar los indices de la paginas borradas
+    for (int i = 0; i < 128; i++) {//se ve toda la memoria real para saber cuales son las paginas que se tienen que borrar que tienen el id del proceso a borrar
         if (M[i][0] == id) {
             M[i][0] = -1;
             M[i][1] = -1;
             M[i][2] = -1;
             M[i][3] = -1;
-            vect.push_back(i);
+            vect.push_back(i);//se pushea el indice borrado en la memoria real
             if (politica == 1) {
-                tiempo += 0.1;
+                tiempo += 0.1;//se borro una pagina asi que se modifica el tiempo sistema total
             }
             else {
-                tiempo2 += 0.1;
+                tiempo2 += 0.1;//se borro una pagina asi que se modifica el tiempo sistema total
             }
         }
     }
-    if (vect.size() == 1) {
-        cout << "Se liberan los marcos de pagina de memoria real " << vect[0] << endl;;
+    if (vect.size() == 1) {//si nadamas se saco una pagina se imprime cual es
+        cout << "Se liberan los marcos de pagina de memoria real " << vect[0] << endl;
     }
-    else if (vect.size() > 1) {
+    else if (vect.size() > 1) {//si es mas de una pagina borrada se va aqui a imprimir cuales eran
         cout << "Se liberan los marcos de pagina de memoria real ";
-        for (int i = 0; i < vect.size() - 1; i++) {
-            cout << vect[i];
-            while (vect[i] == vect[i + 1] - 1) {
+        for (int i = 0; i < vect.size() - 1; i++) {//un ciclo viendo cuantas paginas fueron borradas
+            cout << vect[i];//se imprime donde empieza el rango de paginas borradas
+            while (vect[i] == vect[i + 1] - 1) {//si la pagina que sigue es el mimso numero si se le resta uno es que es consiguiente
                 i++;
             }
-            if (i != vect.size() - 1) {
+            if (i != vect.size() - 1) {//esto si todavia no es la ultima vuelta se imprime la parte final del rango
                 cout << "-" << vect[i - 1] << ", ";
             }
-            else {
+            else {//esta parte es para imprimir si es la ultima pagina y no es consiguiente de las anteriores
                 cout << vect[i] << ", ";
             }
         }
     }
-    for (int i = 0; i < 256; i++) {
+    vector<int> vect2;
+    for (int i = 0; i < 256; i++) {//se ve toda la memoria virtual para saber cuales son las paginas que se tienen que borrar que tienen el id del proceso a borrar
         if (S[i][0] == id) {
             S[i][0] = -1;
             S[i][1] = -1;
             S[i][2] = -1;
             S[i][3] = -1;
-            vect.push_back(i);
+            vect2.push_back(i);//se pushea el indice borrado en la memoria virtual
             if (politica == 1) {
-                tiempo += 0.1;
+                tiempo += 0.1;//se borro una pagina asi que se modifica el tiempo sistema total
             }
             else {
-                tiempo2 += 0.1;
+                tiempo2 += 0.1;//se borro una pagina asi que se modifica el tiempo sistema total
             }
         }
     }
-    vector<int> vect2;
-    if (vect2.size() == 1) {
+    if (vect2.size() == 1) {//si nadamas se saco una pagina se imprime cual es
         cout << "Se liberan los marcos de pagina del area de swapping " << vect2[0] << endl;;
     }
-    else if (vect2.size() > 1) {
+    else if (vect2.size() > 1) {//si es mas de una pagina borrada se va aqui a imprimir cuales eran
         cout << "Se liberan los marcos de pagina del area de swapping ";
-        for (int i = 0; i < vect2.size() - 1; i++) {
-            cout << vect2[i];
-            while (vect2[i] == vect2[i + 1] - 1) {
+        for (int i = 0; i < vect2.size() - 1; i++) {//un ciclo viendo cuantas paginas fueron borradas
+            cout << vect2[i];//se imprime donde empieza el rango de paginas borradas
+            while (vect2[i] == vect2[i + 1] - 1) {//si la pagina que sigue es el mimso numero si se le resta uno es que es consiguiente
                 i++;
             }
-            if (i != vect2.size() - 1) {
+            if (i != vect2.size() - 1) {//esto si todavia no es la ultima vuelta se imprime la parte final del rango
                 cout << "-" << vect2[i - 1] << ", ";
             }
-            else {
+            else {//esta parte es para imprimir si es la ultima pagina y no es consiguiente de las anteriores
                 cout << vect2[i] << ", ";
             }
         }
     }
-    for (int i = 0; i < agregados.size(); i++) {
-        if (politica == 1) {
-            if (agregados[i].idp == id) {
+    for (int i = 0; i < agregados.size(); i++) {//el tamano de numero de procesos en el sistema, y se usara para ver el tiempo de turnaround al borrarlo
+        if (politica == 1) {//si es FIFO
+            if (agregados[i].idp == id) {//se checa el id para saber cual es el que se borro y luego se actualiza su turnaround time
                 agregados[i].turnaroundFIFO = tiempo - agregados[i].timestamp;
             }
         }
-        else
-        {   
-            if (agregados2[i].idp == id) {
+        else{//si es LRU
+            if (agregados2[i].idp == id) {//se checa el id para saber cual es el que se borro y luego se actualiza su turnaround time
                 agregados2[i].turnaroundLRU = tiempo2 - agregados2[i].timestamp;
                 liberados2.push_back(agregados2[i]);
                 agregados2[i] = agregados2[agregados2.size() - 1];
