@@ -23,11 +23,14 @@ struct proceso{
     int pagefaultsFIFO = 0;
     int turnaround;
     int idp;
-    float timestapt;
+    float timestamp;
 };
 
 float tiempo = 0;//variable para ir manejando el tiempo que llevan los procesos FIFO
 float tiempo2 = 0;//variable para ir manejando el tiempo que llevan los procesos LRU
+
+int swapsFIFO = 0;
+int swapsLRU = 0;
 
 vector<proceso> agregados;//vector que guardara los procesos agregados a memoria para luego revisarlos 
 vector<proceso> liberados; //vector que guarda a los procesos que se vayan liberando de memoria para luego usar como estadisticas de turnaround y pagefaults
@@ -90,7 +93,6 @@ void swap_creados(int pagina, float id, float (&M)[128][4], float (&S)[256][4], 
         M[tempoIndice][3] = tempoIndice;// se asigna el la direccion de memoria
         pagina--;//se va ir a la siguiente pagina a cambiar
     }
-    
 }
 
 void cargar(float bytes, float id, float (&M)[128][4], float (&S)[256][4],int politica){
@@ -210,6 +212,157 @@ void FIFO(int direccion, int id, int modificacion, float (&M)[128][4], float (&S
     }
 }
 
+void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[256][4]) {
+    int pagina = floor(direccion / 16);
+    int real = 0;
+    int menor = 999999;
+    int ind = 0;
+    cout << "Obtener la direccion real correspondiente a la direccion virtual " << direccion << " del proceso " << id << endl;
+    for (int k = 0; k < 128; k++) {
+        if (M[k][0] == id && M[k][1] == pagina) {
+            real = (direccion % 16) + k * 16;
+            if (modificacion == 1) {
+                cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
+            }
+            cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
+            M[k][2] = tiempo2;
+            tiempo2 += 0.1;
+            break;
+        }
+
+        if (k == 127) {
+            for (int i = 0; i < agregados.size(); i++) {
+                if (agregados[i].idp == id) {
+                    agregados[i].pagefaultsLRU++;
+                }
+            }
+            for (int i = 0; i < 256; i++) {
+                if (S[i][0] == id && S[i][1] == pagina) {
+                    for (int j = 0; j < 128; j++) {
+                        if (M[j][2] < menor) {
+                            menor = M[j][2];
+                            ind = j;
+                        }
+                        for (int x = 0; x < 256; x++) {//Se busca encontrar un espacio en memoria virtual para poder guardar los procesos swapeados
+                            if (S[x][0] == -1) {
+                                S[x][0] = M[ind][0];//el id del proceso swapeado
+                                S[x][1] = M[ind][1]; //el numero de pagina del proceso
+                                S[x][2] = tiempo2;//el timestamp al momento de swapear
+                                tiempo2++;//se incrementa el tiempo por swapear a out
+                                S[x][3] = M[ind][3];//se ve cual es la direccion en memoria
+
+                                M[ind][0] = S[i][0];//el id del proceso swapeado
+                                M[ind][1] = S[i][1]; //el numero de pagina del proceso
+                                M[ind][2] = tiempo2;//el timestamp al momento de swapear
+                                tiempo2++;//se incrementa el tiempo por swapear a out
+                                M[ind][3] = S[i][3];//se ve cual es la direccion en memoria
+
+                                S[i][0] = -1;
+                                S[i][1] = -1;
+                                S[i][2] = -1;
+                                S[i][3] = -1;
+
+                                cout << "Pagina " << S[x][1] << " del proceso " << S[x][0] << " swapeada al marco " << x << " del area de swapping" << endl;
+                                cout << "Se localizo la pagina " << M[ind][1] << " que estaba en la posicion " << i << " de swapping y cargo al marco " << ind << endl;
+                                real = (direccion % 16) + k * 16;
+                                if (modificacion == 1) {
+                                    cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
+                                }
+                                cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
+                                tiempo += 0.1;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
+    cout << "liberar los marcos de paginas ocupados por el proceso: " << id;
+    vector<int> vect;
+    for (int i = 0; i < 128; i++) {
+        if (M[i][0] == id) {
+            M[i][0] = -1;
+            M[i][1] = -1;
+            M[i][2] = -1;
+            M[i][3] = -1;
+            vect.push_back(i);
+            if (politica == 1) {
+                tiempo += 0.1;
+            }
+            else {
+                tiempo2 += 0.1;
+            }
+        }
+    }
+    if (vect.size() == 1) {
+        cout << "se liberan los marcos de pagina real " << vect[0];
+    }
+    else if (vect.size() > 1) {
+        cout << "se liberan los marcos de pagina real ";
+        for (int i = 0; i < vect.size() - 1; i++) {
+            cout << vect[i];
+            while (vect[i] == vect[i + 1] - 1) {
+                i++;
+            }
+            if (i != vect.size()-1) {
+                cout << "-" << vect[i - 1];
+            }
+            else{
+                cout << vect[i];
+            }
+        }
+    }
+    for (int i = 0; i < 256; i++) {
+        if (S[i][0] == id) {
+            S[i][0] = -1;
+            S[i][1] = -1;
+            S[i][2] = -1;
+            S[i][3] = -1;
+            vect.push_back(i);
+            if (politica == 1) {
+                tiempo += 0.1;
+            }
+            else {
+                tiempo2 += 0.1;
+            }
+        }
+    }
+    vector<int> vect2;
+    if (vect2.size() == 1) {
+        cout << "se liberan los marcos de pagina real " << vect2[0];
+    }
+    else if (vect2.size() > 1) {
+        cout << "se liberan los marcos de pagina real ";
+        for (int i = 0; i < vect2.size() - 1; i++) {
+            cout << vect2[i];
+            while (vect2[i] == vect2[i + 1] - 1) {
+                i++;
+            }
+            if (i != vect2.size() - 1) {
+                cout << "-" << vect2[i - 1];
+            }
+            else {
+                cout << vect2[i];
+            }
+        }
+    }
+    for (int i = 0; i < agregados.size(); i++) {
+        if (agregados[i].idp == id) {
+            if (politica == 1) {
+                agregados[i].turnaround = tiempo - agregados[i].timestamp;
+            }
+            liberados.push_back(agregados[i]);
+            agregados[i] = agregados[agregados.size() - 1];
+            agregados.pop_back();
+        }
+    }
+
+}
+
 int main(){
     float M[128][4]; //Arreglo que simula la memoria real para politica FIFO
     float M2[128][4]; //Arreglo que simula la memoria real para politica LRU
@@ -288,8 +441,12 @@ int main(){
             cin >> id;
             cin >> modificacion;
             FIFO(direccion, id, modificacion, M, S);
+            LRU(direccion, id, modificacion, M, S);
             break;
         case 'L':
+            cin >> id;
+            borrarProceso(id,M,S,1);
+            borrarProceso(id,M2,S2,2);
             break;
         case 'C':
             break;
