@@ -190,13 +190,13 @@ void FIFO(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[
                                 S[x][2] = tiempo;//el timestamp al momento de swapear
                                 tiempo++;//se incrementa el tiempo por swapear a out
                                 S[x][3] = M[ind][3];//se ve cual es la direccion en memoria
-
+                                //se swapean el proceso nuevo a memoria real
                                 M[ind][0] = S[i][0];
                                 M[ind][1] = S[i][1];
                                 M[ind][2] = tiempo;
                                 tiempo++;
                                 M[ind][3] = S[i][3];
-
+                                //se elimina el proceso de swapeado de memoria virtual
                                 S[i][0] = -1;
                                 S[i][1] = -1;
                                 S[i][2] = -1;
@@ -204,8 +204,8 @@ void FIFO(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[
 
                                 cout << "Pagina " << S[x][1] << " del proceso " << S[x][0] << " swapeada al marco " << x << " del area de swapping" << endl;
                                 cout << "Se localizo la pagina " << M[ind][1] << " que estaba en la posicion " << i << " de swapping y cargo al marco " << ind << endl;
-                                real = (direccion % 16) + k * 16;
-                                if (modificacion == 1) {
+                                real = (direccion % 16) + k * 16;//para saber la direccion real en memoria
+                                if (modificacion == 1) {//saber si se modificara o no
                                     cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
                                 }
                                 cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
@@ -245,9 +245,9 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
                     agregados2[i].pagefaultsLRU++;
                 }
             }
-            for (int i = 0; i < 256; i++) {
-                if (S[i][0] == id && S[i][1] == pagina) {
-                    for (int j = 0; j < 128; j++) {
+            for (int i = 0; i < 256; i++) {//se busca en toda la memoria virtual
+                if (S[i][0] == id && S[i][1] == pagina) {//se busca el proceso id y la pagina correcta
+                    for (int j = 0; j < 128; j++) {//se busca cual es el timestamp mas viejo o chico en memoria real
                         if (M[j][2] < menor) {
                             menor = M[j][2];
                             ind = j;
@@ -265,7 +265,7 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
                                 M[ind][2] = tiempo2;//el timestamp al momento de swapear
                                 tiempo2++;//se incrementa el tiempo por swapear a out
                                 M[ind][3] = S[i][3];//se ve cual es la direccion en memoria
-
+                                //se vacia la pagina de la memoria virtual
                                 S[i][0] = -1;
                                 S[i][1] = -1;
                                 S[i][2] = -1;
