@@ -14,27 +14,29 @@ Gabriel Gomez Novau A01720009
 //Structura que tendra los datos de cada proceso
 struct proceso {
     //Constructor que inicializa los valores del objeto
-    int idp;
-    float timestamp;
+    int idp;//id del proceso
+    float timestamp;//tiempo de creacion
     proceso(int idt, float timestampt) {
         idp = idt;
         timestamp = timestampt;
     }
-    int paginas;
-    int pagefaultsLRU = 1;
-    int pagefaultsFIFO = 1;
-    float turnaroundFIFO = 0;
-    float turnaroundLRU = 0;
+    int paginas;//numero de paginas del proceso
+    int pagefaultsLRU = 0;//page faults en LRU
+    int pagefaultsFIFO = 0;//page fault en fifo
+    float turnaroundFIFO = 0;//turnaround en fifo
+    float turnaroundLRU = 0;// turnaroun en LRU
 };
 
 float tiempo = 0;//variable para ir manejando el tiempo que llevan los procesos FIFO
 float tiempo2 = 0;//variable para ir manejando el tiempo que llevan los procesos LRU
 
-int swapsFIFO = 0;
-int swapsLRU = 0;
+int swapsFIFO = 0;//numero de swaps en FIFO
+int swapsLRU = 0;//numero de swaps en LRU
 
 vector<proceso> agregados;//vector que guardara los procesos agregados a memoria para luego revisarlos 
 vector<proceso> liberados; //vector que guarda a los procesos que se vayan liberando de memoria para luego usar como estadisticas de turnaround y pagefaults
+vector<proceso> agregados2;//vector que guardara los procesos agregados a memoria para luego revisarlos 
+vector<proceso> liberados2; //vector que guarda a los procesos que se vayan liberando de memoria para luego usar como estadisticas de turnaround y pagefaults
 
 //Funcion que hace el swapping unicamente para procesos recien creados que no quepan en memoria principal
 void swap_creados(int pagina, float id, float(&M)[128][4], float(&S)[256][4], int politica, bool creado) {
@@ -44,8 +46,8 @@ void swap_creados(int pagina, float id, float(&M)[128][4], float(&S)[256][4], in
         int tempoIndice = -1;//para saber que indice es el que tiene el timestamp mas bajo
         for (int i = 0; i < 128; i++) {
             if (M[i][2] < temporal) {//se checa cual es el first in the todas las paginas
-                temporal = M[i][2];
-                tempoIndice = i;
+                temporal = M[i][2];//temporal para guardar el timestamp mas bajo e ir comparando cada vez
+                tempoIndice = i;//para saber cual es el indice con el timestamp mas bajo
             }
         }
         for (int i = 0; i < 256; i++) {//Se busca encontrar un espacio en memoria virtual para poder guardar los procesos swapeados
@@ -72,26 +74,31 @@ void swap_creados(int pagina, float id, float(&M)[128][4], float(&S)[256][4], in
         M[tempoIndice][1] = cont;//se asigna el numero de pagina del proceso
         cont++;
         if (politica == 1) {
-            M[tempoIndice][2] = tiempo;//time stap de la pagina
-            tiempo++;
+            M[tempoIndice][2] = tiempo;//time stamp de la pagina
+            tiempo++;//se modifico algo entonces se agrega 1 segundo
             if (creado) {
-                agregados.back().pagefaultsFIFO++;
+                agregados.back().pagefaultsFIFO++;//se genero un page fault por eso se agrega al contador
             }
         }
         else
         {
             M[tempoIndice][2] = tiempo2;//time stap de la pagina
-            tiempo2++;
+            tiempo2++;//se modifico algo entonces se agrega 1 segundo
             if (creado) {
-                agregados.back().pagefaultsLRU++;
+                agregados2.back().pagefaultsLRU++;//se genero un page fault por eso se agrega al contador
             }
         }
 
         if (!creado) {//se checa si es el proceso es nuevo o ya fue agregado al vector de agregados
-            proceso temp(id, tiempo);
-            temp.paginas = pagina;
+            proceso temp(id, tiempo);//se crea un temporal objeto proceso para poder pushear el proceso despues a agregados
+            temp.paginas = pagina;//se asigna la cantidad de paginas del proceso
             creado = true;
-            agregados.push_back(temp);//se agrega el nuevo proceso creado
+            if (politica == 1) {
+                agregados.push_back(temp);//se agrega el nuevo proceso creado
+            }
+            else {
+                agregados2.push_back(temp);//se agrega el nuevo proceso creado
+            }
         }
         M[tempoIndice][3] = tempoIndice;// se asigna el la direccion de memoria
         pagina--;//se va ir a la siguiente pagina a cambiar
@@ -121,7 +128,12 @@ void cargar(float bytes, float id, float(&M)[128][4], float(&S)[256][4], int pol
             if (!creado) {
                 proceso Nuevo(id, tiempo); //Creacion de un nuevo proceso, con su respectivo ID proveido por el usuario
                 Nuevo.paginas = tempPaginas;
-                agregados.push_back(Nuevo);
+                if (politica == 1) {
+                    agregados.push_back(temp);//se agrega el nuevo proceso creado
+                }
+                else {
+                    agregados2.push_back(temp);//se agrega el nuevo proceso creado
+                }
                 creado = true;
             }
         }
@@ -136,44 +148,37 @@ void cargar(float bytes, float id, float(&M)[128][4], float(&S)[256][4], int pol
             pagina = 0;
         }
         if (pagina == 0) {
-            /*for(int x = 0; x<128;x++){
-                //cout << "ID del proceso: " << M[x][0] << endl;
-                cout << "Numero del pagina del proceso " << M[x][0] << " es " << M[x][1]<<  endl;
-                cout << "Timestamp del proceso " << M[x][0] << " es " << M[x][2]<< endl;
-                cout << "Direccion de una pagina del proceso " << M[x][0] << " es " << M[x][3]<< endl;
-            }*/
-
             break;
         }
     }
 }
 
 void FIFO(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[256][4]) {
-    int pagina = floor(direccion / 16);
-    int real = 0;
-    int menor = 999999;
-    int ind = 0;
-    cout << "Obtener la direccion real correspondiente a la direccion virtual " << direccion << " del proceso " << id << endl;
-    for (int k = 0; k < 128; k++) {
-        if (M[k][0] == id && M[k][1] == pagina) {
-            real = (direccion % 16) + k * 16;
-            if (modificacion == 1) {
+    int pagina = floor(direccion / 16);//pagina es igual a la direccion entre 16 bytes que es el tamano de las paginas
+    int real = 0;//queremos ver cual es la direccion real
+    int menor = 999999;//se usara para estar viendo cual es el timestamp mas bajo
+    int ind = 0;//se usara para saber el indice del proceso a cambiar
+    cout << "FIFO: Obtener la direccion real correspondiente a la direccion virtual " << direccion << " del proceso " << id << endl;
+    for (int k = 0; k < 128; k++) {//se recorre toda la memoria real
+        if (M[k][0] == id && M[k][1] == pagina) {//este if es para saber si es el el proceso buscado y el la pagina correcta
+            real = (direccion % 16) + k * 16;//la direccion real del proceso a swapear
+            if (modificacion == 1) {//es para saber si el proceso se va a modificar
                 cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
             }
             cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
-            tiempo += 0.1;
+            tiempo += 0.1;//se modifica asi que se anade el tiempo a todo el programa
             break;
         }
 
-        if (k == 127) {
-            for (int i = 0; i < agregados.size(); i++) {
-                if (agregados[i].idp == id) {
+        if (k == 127) {//si se llega al final de la memoria real se entra aqui
+            for (int i = 0; i < agregados.size(); i++) {//se busca en todos los procesos agregados en el sistema
+                if (agregados[i].idp == id) {// si se encuentra se id se agrega un page fault
                     agregados[i].pagefaultsFIFO++;
                 }
             }
-            for (int i = 0; i < 256; i++) {
-                if (S[i][0] == id && S[i][1] == pagina) {
-                    for (int j = 0; j < 128; j++) {
+            for (int i = 0; i < 256; i++) {//se busca en la memoria virtual
+                if (S[i][0] == id && S[i][1] == pagina) {//se busca si se encuentra el proceso y la pagina a swapear en la memoria virtual
+                    for (int j = 0; j < 128; j++) {//se busca en la memoria real cual es el que tiene el timestamp mas chico
                         if (M[j][2] < menor) {
                             menor = M[j][2];
                             ind = j;
@@ -217,27 +222,27 @@ void FIFO(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[
 }
 
 void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[256][4]) {
-    int pagina = floor(direccion / 16);
-    int real = 0;
-    int menor = 999999;
-    int ind = 0;
-    cout << "Obtener la direccion real correspondiente a la direccion virtual " << direccion << " del proceso " << id << endl;
-    for (int k = 0; k < 128; k++) {
-        if (M[k][0] == id && M[k][1] == pagina) {
-            real = (direccion % 16) + k * 16;
-            if (modificacion == 1) {
+    int pagina = floor(direccion / 16);//pagina es igual a la direccion entre 16 bytes que es el tamano de las paginas
+    int real = 0;//queremos ver cual es la direccion real
+    int menor = 999999;//se usara para estar viendo cual es el timestamp mas bajo
+    int ind = 0;//se usara para saber el indice del proceso a cambiar
+    cout << "LRU: Obtener la direccion real correspondiente a la direccion virtual " << direccion << " del proceso " << id << endl;
+    for (int k = 0; k < 128; k++) {//se recorre toda la memoria real
+        if (M[k][0] == id && M[k][1] == pagina) {//este if es para saber si es el el proceso buscado y el la pagina correcta
+            real = (direccion % 16) + k * 16;//la direccion real del proceso a swapear
+            if (modificacion == 1) {//es para saber si el proceso se va a modificar
                 cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
             }
             cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
-            M[k][2] = tiempo2;
-            tiempo2 += 0.1;
+            M[k][2] = tiempo2;//como se uso se cambia el timestamp porque en LRU se ocupa la ultima vez usada
+            tiempo2 += 0.1;//se modifica asi que se anade el tiempo a todo el programa
             break;
         }
 
-        if (k == 127) {
-            for (int i = 0; i < agregados.size(); i++) {
-                if (agregados[i].idp == id) {
-                    agregados[i].pagefaultsLRU++;
+        if (k == 127) {//si se llega al final de la memoria real se entra aqui
+            for (int i = 0; i < agregados2.size(); i++) {//se busca en todos los procesos agregados en el sistema
+                if (agregados2[i].idp == id) {// si se encuentra se id se agrega un page fault
+                    agregados2[i].pagefaultsLRU++;
                 }
             }
             for (int i = 0; i < 256; i++) {
@@ -356,19 +361,22 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
         }
     }
     for (int i = 0; i < agregados.size(); i++) {
-        if (agregados[i].idp == id) {
-            if (politica == 1) {
+        if (politica == 1) {
+            if (agregados[i].idp == id) {
                 agregados[i].turnaroundFIFO = tiempo - agregados[i].timestamp;
             }
-            else
-            {
-                agregados[i].turnaroundLRU = tiempo2 - agregados[i].timestamp;
-            }
-
-            liberados.push_back(agregados[i]);
-            agregados[i] = agregados[agregados.size() - 1];
-            agregados.pop_back();
         }
+        else
+        {   
+            if (agregados2[i].idp == id) {
+                agregados2[i].turnaroundLRU = tiempo2 - agregados2[i].timestamp;
+                liberados2.push_back(agregados2[i]);
+                agregados2[i] = agregados2[agregados2.size() - 1];
+                agregados2.pop_back();
+            }
+        }
+
+        
     }
 
 }
@@ -379,13 +387,13 @@ void estadisticas() {
     for (int i = 0; i < liberados.size(); i++) {
         cout << "Tunaround del proceso " << liberados[i].idp << " con politica FIFO: " << liberados[i].turnaroundFIFO << endl;
         sumFIFO += liberados[i].turnaroundFIFO;
-        cout << "Tunaround del proceso " << liberados[i].idp << " con politica LRU: " << liberados[i].turnaroundLRU << endl;
-        sumLRU += liberados[i].turnaroundLRU;
+        cout << "Tunaround del proceso " << liberados2[i].idp << " con politica LRU: " << liberados2[i].turnaroundLRU << endl;
+        sumLRU += liberados2[i].turnaroundLRU;
         cout << "Numero de pagefaults del proceso " << liberados[i].idp << " con politica FIFO: " << liberados[i].pagefaultsFIFO << endl;
-        cout << "Numero de pagefaults del proceso " << liberados[i].idp << " con politica LRU: " << liberados[i].pagefaultsLRU << endl;
+        cout << "Numero de pagefaults del proceso " << liberados2[i].idp << " con politica LRU: " << liberados2[i].pagefaultsLRU << endl;
     }
     float promedioFIFO = sumFIFO / (liberados.size());
-    float promedioLRU = sumLRU / (liberados.size());
+    float promedioLRU = sumLRU / (liberados2.size());
     //cout << "sumas: " << sumFIFO << sumLRU <<endl;
     cout << "Turnaround promedio con politica FIFO: " << promedioFIFO << endl;
     cout << "Turnaround promedio con politica LRU: " << promedioLRU << endl;
