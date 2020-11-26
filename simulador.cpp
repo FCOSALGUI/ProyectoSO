@@ -364,6 +364,7 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
         if (politica == 1) {//si es FIFO
             if (agregados[i].idp == id) {//se checa el id para saber cual es el que se borro y luego se actualiza su turnaround time
                 agregados[i].turnaroundFIFO = tiempo - agregados[i].timestamp;
+                //las siguientes lineas son para poner el proceso borrado en un lugar para saber su informacion
                 liberados.push_back(agregados[i]);
                 agregados[i] = agregados[agregados.size() - 1];
                 agregados.pop_back();
@@ -372,6 +373,7 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
         else{//si es LRU
             if (agregados2[i].idp == id) {//se checa el id para saber cual es el que se borro y luego se actualiza su turnaround time
                 agregados2[i].turnaroundLRU = tiempo2 - agregados2[i].timestamp;
+                //las siguientes lineas son para poner el proceso borrado en un lugar para saber su informacion
                 liberados2.push_back(agregados2[i]);
                 agregados2[i] = agregados2[agregados2.size() - 1];
                 agregados2.pop_back();
@@ -384,8 +386,8 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
 }
 
 void estadisticas() {
-    float sumFIFO = 0;
-    float sumLRU = 0;
+    float sumFIFO = 0;//se usara para sacar los promedio y estadisticas de FIFO
+    float sumLRU = 0;//se usara para sacar los promedio y estadisticas de LRU
     for (int i = 0; i < liberados.size(); i++) {
         cout << "Tunaround del proceso " << liberados[i].idp << " con politica FIFO: " << liberados[i].turnaroundFIFO << endl;
         sumFIFO += liberados[i].turnaroundFIFO;
@@ -396,7 +398,7 @@ void estadisticas() {
     }
     float promedioFIFO = sumFIFO / (liberados.size());
     float promedioLRU = sumLRU / (liberados2.size());
-    //cout << "sumas: " << sumFIFO << sumLRU <<endl;
+
     cout << "Turnaround promedio con politica FIFO: " << promedioFIFO << endl;
     cout << "Turnaround promedio con politica LRU: " << promedioLRU << endl;
     cout << "Numero total de operaciones swap-out y swap-in en FIFO: " << swapsFIFO << endl;
@@ -408,11 +410,6 @@ int main() {
     float ML[128][4]; //Arreglo que simula la memoria real para politica LRU
     float S[256][4]; //Arreglo auxiliar simulara el area de una memoria real para swapping en FIFO
     float SL[256][4]; //Arreglo auxiliar simulara el area de una memoria real para swapping en LRU
-
-    /*queue<proceso> FIFO; // Queue que guarda los procesos para la politica FIFO
-    queue<proceso> LRU; // Queue que guarda los procesos para la politica LRU
-    vector<proceso> SFIFO; //Dichos vectores guardaran a los procesos que vayan siendo mandados a swapping
-    vector<proceso> SLRU; */
 
     //Funcion que inicializa la memoria en 0, pues aun no ha llegado ningun proceso
     for (int i = 0; i < 128; i++) {
@@ -437,50 +434,54 @@ int main() {
         SL[i][3] = -1;//direccion en memoria
     }
 
-    bool finish = false;
-    char process;
+    bool finish = false;//para saber si ya se acabo el programa
+    char process;//se usa para saber que procedimiento usar
     float bytes = 0, id = 0, mod = 0, direccion = 0, modificacion = 0;
-    string comentario, archEntradaNombre;
-    cout << "Nombre del archivo (sin extencion): ";
-    cin >> archEntradaNombre;
+    string comentario, archEntradaNombre;//se usara para la lectura del archivo
+    cout << "Nombre del archivo (sin extencion (.txt)): ";
+    cin >> archEntradaNombre;//se ingresa el nombre del archivo txt
     archEntradaNombre += ".txt";
     ifstream archEnt(archEntradaNombre);
-    if (archEnt.is_open()) {
-        while (!archEnt.eof()) {
+    if (archEnt.is_open()) {//se ve si existe el archivo
+        while (!archEnt.eof()) {//si no se ha acabado de leer todo el archivo sigue leyendo
             archEnt >> process;
             switch (process)
             {
             case 'P':
                 archEnt >> bytes;
                 archEnt >> id;
-                //Output del proceso generado
-                cout << process << " " << bytes << " " << id << endl;
-                cout << "FIFO: Asignar " << bytes << " bytes al proceso " << id << endl;
-                cargar(bytes, id, M, S, 1);
-                cout << "Se asignaron los marcos de pagina ";
-                for (int k = 0; k < 127; k++) {
-                    if (M[k][0] == id) {
-                        cout << k;
-                        while (M[k][0] == M[k + 1][0]) {
-                            k++;
+                if (bytes < 2049) {
+                    //Output del proceso generado
+                    cout << process << " " << bytes << " " << id << endl;
+                    cout << "FIFO: Asignar " << bytes << " bytes al proceso " << id << endl;
+                    cargar(bytes, id, M, S, 1);
+                    //se imprime lo que se hizo a la consola en FIFO
+                    cout << "Se asignaron los marcos de pagina ";
+                    for (int k = 0; k < 127; k++) {
+                        if (M[k][0] == id) {
+                            cout << k;
+                            while (M[k][0] == M[k + 1][0]) {
+                                k++;
+                            }
+                            cout << "-" << k << ", " << endl;
                         }
-                        cout << "-" << k << ", " << endl;
                     }
-                }
-                //Output del proceso cargado
-                cout << "LRU: Asignar " << bytes << " bytes al proceso " << id << endl;
-                cargar(bytes, id, ML, SL, 2);
-                cout << "Se asignaron los marcos de pagina ";
-                for (int h = 0; h < 127; h++) {
-                    if (ML[h][0] == id) {
-                        cout << h;
-                        while (ML[h][0] == ML[h + 1][0]) {
-                            h++;
+                    //Output del proceso cargado
+                    cout << "LRU: Asignar " << bytes << " bytes al proceso " << id << endl;
+                    cargar(bytes, id, ML, SL, 2);
+                    //se imprime lo que se hizo a la consola en LRU
+                    cout << "Se asignaron los marcos de pagina ";
+                    for (int h = 0; h < 127; h++) {
+                        if (ML[h][0] == id) {
+                            cout << h;
+                            while (ML[h][0] == ML[h + 1][0]) {
+                                h++;
+                            }
+                            cout << "-" << h << ", " << endl;
                         }
-                        cout << "-" << h << ", " << endl;
                     }
+                    break;
                 }
-                break;
             case 'A':
                 archEnt >> direccion;
                 archEnt >> id;
@@ -514,7 +515,7 @@ int main() {
         }
         archEnt.close();
     }
-    else {
+    else {//si no existe el archivo que se ingreso se regresa que no se pudo abrir
         cout << "archivo no abrio" << endl;
     }
     return EXIT_SUCCESS;
