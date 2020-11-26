@@ -291,7 +291,12 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
 }
 
 void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
-    cout << "liberar los marcos de paginas ocupados por el proceso: " << id << endl;;
+    if(politica == 1){
+        cout << "FIFO: Liberar los marcos de paginas ocupados por el proceso: " << id << endl;
+    }
+    else{
+        cout << "LRU: Liberar los marcos de paginas ocupados por el proceso: " << id << endl;
+    }
     vector<int> vect;//se hace un vector para guardar los indices de la paginas borradas
     for (int i = 0; i < 128; i++) {//se ve toda la memoria real para saber cuales son las paginas que se tienen que borrar que tienen el id del proceso a borrar
         if (M[i][0] == id) {
@@ -313,16 +318,16 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
     }
     else if (vect.size() > 1) {//si es mas de una pagina borrada se va aqui a imprimir cuales eran
         cout << "Se liberan los marcos de pagina de memoria real ";
-        for (int i = 0; i < vect.size() - 1; i++) {//un ciclo viendo cuantas paginas fueron borradas
-            cout << vect[i];//se imprime donde empieza el rango de paginas borradas
-            while (vect[i] == vect[i + 1] - 1) {//si la pagina que sigue es el mimso numero si se le resta uno es que es consiguiente
+        for (int i = 0; i < vect.size(); i++) {//un ciclo viendo cuantas paginas fueron borradas
+            cout << vect[i] << "-";//se imprime donde empieza el rango de paginas borradas
+            while (vect[i] == vect[i + 1] - 1 && i< vect.size()-1) {//si la pagina que sigue es el mimso numero si se le resta uno es que es consiguiente
                 i++;
             }
             if (i != vect.size() - 1) {//esto si todavia no es la ultima vuelta se imprime la parte final del rango
-                cout << "-" << vect[i - 1] << ", ";
+                cout << vect[i] << ", " << endl;
             }
-            else {//esta parte es para imprimir si es la ultima pagina y no es consiguiente de las anteriores
-                cout << vect[i] << ", ";
+            else if(i == vect.size()-1){//esta parte es para imprimir si es la ultima pagina y no es consiguiente de las anteriores
+                cout << vect[i] << endl;
             }
         }
     }
@@ -347,16 +352,16 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
     }
     else if (vect2.size() > 1) {//si es mas de una pagina borrada se va aqui a imprimir cuales eran
         cout << "Se liberan los marcos de pagina del area de swapping ";
-        for (int i = 0; i < vect2.size() - 1; i++) {//un ciclo viendo cuantas paginas fueron borradas
-            cout << vect2[i];//se imprime donde empieza el rango de paginas borradas
-            while (vect2[i] == vect2[i + 1] - 1) {//si la pagina que sigue es el mimso numero si se le resta uno es que es consiguiente
+        for (int i = 0; i < vect2.size(); i++) {//un ciclo viendo cuantas paginas fueron borradas
+            cout << vect2[i] << "-";//se imprime donde empieza el rango de paginas borradas
+            while (vect2[i] == vect2[i + 1] - 1 && i < vect2.size()-1) {//si la pagina que sigue es el mimso numero si se le resta uno es que es consiguiente
                 i++;
             }
             if (i != vect2.size() - 1) {//esto si todavia no es la ultima vuelta se imprime la parte final del rango
-                cout << "-" << vect2[i - 1] << ", ";
+                cout << vect2[i] << ", " << endl;
             }
-            else {//esta parte es para imprimir si es la ultima pagina y no es consiguiente de las anteriores
-                cout << vect2[i] << ", ";
+            else if(i == vect2.size()-1){//esta parte es para imprimir si es la ultima pagina y no es consiguiente de las anteriores
+                cout << vect2[i] << endl;
             }
         }
     }
@@ -379,10 +384,7 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
                 agregados2.pop_back();
             }
         }
-
-        
     }
-
 }
 
 void estadisticas() {
@@ -476,12 +478,19 @@ int main() {
                             cout << h;
                             while (ML[h][0] == ML[h + 1][0]) {
                                 h++;
+                                if(h == 127){
+                                    break;}
                             }
                             cout << "-" << h << ", " << endl;
                         }
                     }
+                    
                     break;
                 }
+                else{
+                        cout << process << " " << bytes << " " << id << endl;
+                        cout << "Error: El proceso excede la capacidad de memoria de 2048 bytes" << endl;
+                    }
             case 'A':
                 archEnt >> direccion;
                 archEnt >> id;
