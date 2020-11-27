@@ -56,12 +56,12 @@ void swap_creados(int pagina, float id, float(&M)[128][4], float(&S)[256][4], in
                 S[i][1] = M[tempoIndice][1]; //el numero de pagina del proceso
                 if (politica == 1) {
                     S[i][2] = tiempo;//el timestamp al momento de swapear
-                    tiempo++;//se incrementa el tiempo por swapear a out
+                    tiempo = tiempo + 1;//se incrementa el tiempo por swapear a out
                     swapsFIFO++;
                 }
                 else {
                     S[i][2] = tiempo2;//el timestamp al momento de swapear
-                    tiempo2++;//se incrementa el tiempo por swapear a out
+                    tiempo2 = tiempo2 + 1;//se incrementa el tiempo por swapear a out
                     swapsLRU++;
                 }
 
@@ -75,7 +75,7 @@ void swap_creados(int pagina, float id, float(&M)[128][4], float(&S)[256][4], in
         cont++;
         if (politica == 1) {
             M[tempoIndice][2] = tiempo;//time stamp de la pagina
-            tiempo++;//se modifico algo entonces se agrega 1 segundo
+            tiempo = tiempo + 1;//se modifico algo entonces se agrega 1 segundo
             if (creado) {
                 agregados.back().pagefaultsFIFO++;//se genero un page fault por eso se agrega al contador
             }
@@ -83,7 +83,7 @@ void swap_creados(int pagina, float id, float(&M)[128][4], float(&S)[256][4], in
         else
         {
             M[tempoIndice][2] = tiempo2;//time stap de la pagina
-            tiempo2++;//se modifico algo entonces se agrega 1 segundo
+            tiempo2 = tiempo2 +1;//se modifico algo entonces se agrega 1 segundo
             if (creado) {
                 agregados2.back().pagefaultsLRU++;//se genero un page fault por eso se agrega al contador
             }
@@ -117,11 +117,11 @@ void cargar(float bytes, float id, float(&M)[128][4], float(&S)[256][4], int pol
             cont++;
             if (politica == 1) {
                 M[i][2] = tiempo;
-                tiempo++;
+                tiempo = tiempo + 1;
             }
             else {
                 M[i][2] = tiempo2;
-                tiempo2++;
+                tiempo2 = tiempo2 +1;
             }
             M[i][3] = i;
             pagina--;
@@ -166,7 +166,7 @@ void FIFO(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[
                 cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
             }
             cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
-            tiempo += 0.1;//se modifica asi que se anade el tiempo a todo el programa
+            tiempo = tiempo + 0.1;//se modifica asi que se anade el tiempo a todo el programa
             break;
         }
 
@@ -188,13 +188,13 @@ void FIFO(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[
                                 S[x][0] = M[ind][0];//el id del proceso swapeado
                                 S[x][1] = M[ind][1]; //el numero de pagina del proceso
                                 S[x][2] = tiempo;//el timestamp al momento de swapear
-                                tiempo++;//se incrementa el tiempo por swapear a out
+                                tiempo = tiempo + 1;//se incrementa el tiempo por swapear a out
                                 S[x][3] = M[ind][3];//se ve cual es la direccion en memoria
                                 //se swapean el proceso nuevo a memoria real
                                 M[ind][0] = S[i][0];
                                 M[ind][1] = S[i][1];
                                 M[ind][2] = tiempo;
-                                tiempo++;
+                                tiempo = tiempo + 1;
                                 M[ind][3] = S[i][3];
                                 //se elimina el proceso de swapeado de memoria virtual
                                 S[i][0] = -1;
@@ -209,7 +209,7 @@ void FIFO(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[
                                     cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
                                 }
                                 cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
-                                tiempo += 0.1;
+                                tiempo = tiempo + 0.1;
                                 swapsFIFO++;
                                 break;
                             }
@@ -235,7 +235,7 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
             }
             cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
             M[k][2] = tiempo2;//como se uso se cambia el timestamp porque en LRU se ocupa la ultima vez usada
-            tiempo2 += 0.1;//se modifica asi que se anade el tiempo a todo el programa
+            tiempo2 = tiempo2 + 0.1;//se modifica asi que se anade el tiempo a todo el programa
             break;
         }
 
@@ -257,13 +257,13 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
                                 S[x][0] = M[ind][0];//el id del proceso swapeado
                                 S[x][1] = M[ind][1]; //el numero de pagina del proceso
                                 S[x][2] = tiempo2;//el timestamp al momento de swapear
-                                tiempo2++;//se incrementa el tiempo por swapear a out
+                                tiempo2 = tiempo2 + 1;//se incrementa el tiempo por swapear a out
                                 S[x][3] = M[ind][3];//se ve cual es la direccion en memoria
 
                                 M[ind][0] = S[i][0];//el id del proceso swapeado
                                 M[ind][1] = S[i][1]; //el numero de pagina del proceso
                                 M[ind][2] = tiempo2;//el timestamp al momento de swapear
-                                tiempo2++;//se incrementa el tiempo por swapear a out
+                                tiempo2 = tiempo2 + 1;//se incrementa el tiempo por swapear a out
                                 M[ind][3] = S[i][3];//se ve cual es la direccion en memoria
                                 //se vacia la pagina de la memoria virtual
                                 S[i][0] = -1;
@@ -278,7 +278,7 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
                                     cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
                                 }
                                 cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
-                                tiempo += 0.1;
+                                tiempo2 = tiempo2 + 0.1;
                                 swapsLRU++;
                                 break;
                             }
@@ -306,10 +306,10 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
             M[i][3] = -1;
             vect.push_back(i);//se pushea el indice borrado en la memoria real
             if (politica == 1) {
-                tiempo += 0.1;//se borro una pagina asi que se modifica el tiempo sistema total
+                tiempo = tiempo + 0.1;//se borro una pagina asi que se modifica el tiempo sistema total
             }
             else {
-                tiempo2 += 0.1;//se borro una pagina asi que se modifica el tiempo sistema total
+                tiempo2 = tiempo2 + 0.1;//se borro una pagina asi que se modifica el tiempo sistema total
             }
         }
     }
@@ -340,10 +340,10 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
             S[i][3] = -1;
             vect2.push_back(i);//se pushea el indice borrado en la memoria virtual
             if (politica == 1) {
-                tiempo += 0.1;//se borro una pagina asi que se modifica el tiempo sistema total
+                tiempo = tiempo + 0.1;//se borro una pagina asi que se modifica el tiempo sistema total
             }
             else {
-                tiempo2 += 0.1;//se borro una pagina asi que se modifica el tiempo sistema total
+                tiempo2 = tiempo2 + 0.1;//se borro una pagina asi que se modifica el tiempo sistema total
             }
         }
     }
