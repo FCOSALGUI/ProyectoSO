@@ -106,9 +106,10 @@ void swap_creados(int pagina, float id, float(&M)[128][4], float(&S)[256][4], in
 }
 
 void cargar(float bytes, float id, float(&M)[128][4], float(&S)[256][4], int politica) {
-    bool creado = false;
+    bool creado = false;//Variable que se utiliza si el para agregar al proceso al vector de procesos si se encuentra un espacio para el
+    int aux; //Variable que se va a utilizar para contar la cantidad de paginas disponibles en el area de swapping
     int pagina = ceil(bytes / 16); //Variable que calcula la cantidad de marcos de pagina necesarios para el proceso, siempre redondeando para mayor espacio
-    int tempPaginas = pagina;
+    int tempPaginas = pagina;//Nos ayuda a recordar la cantidad de paginas que que guardaran en el structure proceso
     int cont = 0;
     for (int i = 0; i < 128; i++) { //Loop que recorre toda la memoria y en caso de encontrar el espacio necesario, guarda el proceso en la memoria
         if (M[i][0] == -1) {//Revisa desde donde se encuentra el espacio vacio mas las paginas necesarias que no se pase de la memoria
@@ -138,12 +139,34 @@ void cargar(float bytes, float id, float(&M)[128][4], float(&S)[256][4], int pol
             }
         }
         if (i == 127) {//En caso de que no se pueda meter el proceso, se hace swapping
-            //El 1 indica politica de reemplazo FIFO y el 2 LRU 
+            //El 1 indica politica de reemplazo FIFO y el 2 LRU
             if (politica == 1) {
-                swap_creados(pagina, id, M, S, politica, creado);
+                aux = 0;
+                for(int a = 0 ; a < 256; a++){//Primero se revisa si se tiene espacio en la memoria de swapping 
+                    if(S[a][0] == -1){
+                        aux++;
+                    }
+                }
+                if(aux >= pagina){ 
+                    swap_creados(pagina, id, M, S, politica, creado);
+                }
+                else{
+                    cout << "FIFO: No se ha encontrado espacio en la memoria de swapping para meter al proceso\nNo se procesara" << endl;
+                }
             }
             else {
-                swap_creados(pagina, id, M, S, politica, creado);
+                aux = 0;
+                for(int a = 0 ; a < 256; a++){//Primero se revisa si se tiene espacio en la memoria de swapping 
+                    if(S[a][0] == -1){
+                        aux++;
+                    }
+                }
+                if(aux >= pagina){ 
+                    swap_creados(pagina, id, M, S, politica, creado);
+                }
+                else{
+                    cout << "LRU: No se ha encontrado espacio en la memoria de swapping para meter al proceso\nNo se procesara" << endl;
+                }
             }
             pagina = 0;
         }
@@ -392,9 +415,9 @@ void estadisticas() {
     float sumLRU = 0;//se usara para sacar los promedio y estadisticas de LRU
     for (int i = 0; i < liberados.size(); i++) {
         cout << "Tunaround del proceso " << liberados[i].idp << " con politica FIFO: " << liberados[i].turnaroundFIFO << endl;
-        sumFIFO += liberados[i].turnaroundFIFO;
+        sumFIFO = sumFIFO + liberados[i].turnaroundFIFO;
         cout << "Tunaround del proceso " << liberados2[i].idp << " con politica LRU: " << liberados2[i].turnaroundLRU << endl;
-        sumLRU += liberados2[i].turnaroundLRU;
+        sumLRU = sumLRU + liberados2[i].turnaroundLRU;
         cout << "Numero de pagefaults del proceso " << liberados[i].idp << " con politica FIFO: " << liberados[i].pagefaultsFIFO << endl;
         cout << "Numero de pagefaults del proceso " << liberados2[i].idp << " con politica LRU: " << liberados2[i].pagefaultsLRU << endl;
     }
@@ -437,8 +460,8 @@ int main() {
     }
 
     bool finish = false;//para saber si ya se acabo el programa
+    bool error = false; //para saber si se tiene un error en los comandos introducidos por el archivo y avisarle al usuario, sera true mientras haya error
     char process;//se usa para saber que procedimiento usar
-    float bytes = 0, id = 0, mod = 0, direccion = 0, modificacion = 0;
     string comentario, archEntradaNombre;//se usara para la lectura del archivo
     cout << "Nombre del archivo (sin extencion (.txt)): ";
     cin >> archEntradaNombre;//se ingresa el nombre del archivo txt
@@ -446,86 +469,109 @@ int main() {
     ifstream archEnt(archEntradaNombre);
     if (archEnt.is_open()) {//se ve si existe el archivo
         while (!archEnt.eof()) {//si no se ha acabado de leer todo el archivo sigue leyendo
+            float bytes = -1, id = -1, mod = -1, direccion = -1, modificacion = -1; //Variables que mandan los usuarios
             archEnt >> process;
             switch (process)
             {
             case 'P':
+                error = false;
                 archEnt >> bytes;
                 archEnt >> id;
-                if (bytes < 2049) {
-                    //Output del proceso generado
-                    cout << process << " " << bytes << " " << id << endl;
-                    cout << "FIFO: Asignar " << bytes << " bytes al proceso " << id << endl;
-                    cargar(bytes, id, M, S, 1);
-                    //se imprime lo que se hizo a la consola en FIFO
-                    cout << "Se asignaron los marcos de pagina ";
-                    for (int k = 0; k < 127; k++) {
-                        if (M[k][0] == id) {
-                            cout << k;
-                            while (M[k][0] == M[k + 1][0]) {
-                                k++;
+                cout << process << " " << bytes << " " << id << endl;
+                if(bytes > -1 && id > -1){
+                    if (bytes < 2049) {
+                        //Output del proceso generado
+                        cout << "FIFO: Asignar " << bytes << " bytes al proceso " << id << endl;
+                        cargar(bytes, id, M, S, 1);
+                        //se imprime lo que se hizo a la consola en FIFO
+                        cout << "Se asignaron los marcos de pagina ";
+                        for (int k = 0; k < 127; k++) {
+                            if (M[k][0] == id) {
+                                cout << k;
+                                while (M[k][0] == M[k + 1][0]) {
+                                    k++;
+                                }
+                                cout << "-" << k << ", " << endl;
                             }
-                            cout << "-" << k << ", " << endl;
+                        }
+                        //Output del proceso cargado
+                        cout << "LRU: Asignar " << bytes << " bytes al proceso " << id << endl;
+                        cargar(bytes, id, ML, SL, 2);
+                        //se imprime lo que se hizo a la consola en LRU
+                        cout << "Se asignaron los marcos de pagina ";
+                        for (int h = 0; h < 127; h++) {
+                            if (ML[h][0] == id) {
+                                cout << h;
+                                while (ML[h][0] == ML[h + 1][0]) {
+                                    h++;
+                                    if(h == 127){
+                                        break;}
+                                }
+                                cout << "-" << h << ", " << endl;
+                            }
                         }
                     }
-                    //Output del proceso cargado
-                    cout << "LRU: Asignar " << bytes << " bytes al proceso " << id << endl;
-                    cargar(bytes, id, ML, SL, 2);
-                    //se imprime lo que se hizo a la consola en LRU
-                    cout << "Se asignaron los marcos de pagina ";
-                    for (int h = 0; h < 127; h++) {
-                        if (ML[h][0] == id) {
-                            cout << h;
-                            while (ML[h][0] == ML[h + 1][0]) {
-                                h++;
-                                if(h == 127){
-                                    break;}
-                            }
-                            cout << "-" << h << ", " << endl;
-                        }
+                    if(bytes > 2048){ //Si se excede la capacidad de la memoria principal, no se ingresa el proceso
+                            cout << "Error: El proceso excede la capacidad de memoria de 2048 bytes\nNo sera procesado" << endl;
                     }
-                    
-                    break;
                 }
                 else{
-                        cout << process << " " << bytes << " " << id << endl;
-                        cout << "Error: El proceso excede la capacidad de memoria de 2048 bytes" << endl;
-                    }
+                    cout << "El comando P esta incompleto o es incorrecto, no sera procesado" << endl;
+                }
+                break;
             case 'A':
+                error = false;
                 archEnt >> direccion;
                 archEnt >> id;
                 archEnt >> modificacion;
                 cout << process << " " << direccion << " " << id << " " << modificacion << endl;
-                FIFO(direccion, id, modificacion, M, S);
-                LRU(direccion, id, modificacion, ML, SL);
+                if(direccion > -1 && id > -1 && modificacion > -1){
+                    FIFO(direccion, id, modificacion, M, S);
+                    LRU(direccion, id, modificacion, ML, SL);
+                }
+                else{
+                    cout << "El comando A esta incompleto o es incorrecto, no sera procesado" << endl;
+                }
                 break;
             case 'L':
+                error = false;
                 archEnt >> id;
                 cout << process << " " << id << endl;
-                borrarProceso(id, M, S, 1);
-                borrarProceso(id, ML, SL, 2);
+                if(id > -1){
+                    borrarProceso(id, M, S, 1);
+                    borrarProceso(id, ML, SL, 2);
+                }
+                else{
+                    cout << "El comando L esta incompleto o es incorrecto, no sera procesado" << endl;
+                }
                 break;
             case 'C':
+                error = false;
                 cout << process << endl;
                 archEnt >> comentario;
                 cout << comentario << endl;
                 break;
             case 'F':
+                error = false;
                 cout << process << endl;
                 estadisticas();
                 break;
             case 'E':
-                cout << process << endl;
+                error = false;
+                cout << process;
                 break;
             default:
-                cout << "Error, el comando pues no es valido" << endl;
+                if(!error){
+                cout << "Error, el comando "  << process << " no es valido\nCualquier entrada siguiente de " << process << " sera ignorada hasta encontrar un input valido" << endl;
+                error = true;
+                }
                 break;
             }
         }
         archEnt.close();
     }
     else {//si no existe el archivo que se ingreso se regresa que no se pudo abrir
-        cout << "archivo no abrio" << endl;
+        cout << "Archivo no abrio" << endl;
     }
     return EXIT_SUCCESS;
 }
