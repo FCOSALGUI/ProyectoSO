@@ -39,7 +39,7 @@ vector<proceso> agregados2;//vector que guardara los procesos agregados a memori
 vector<proceso> liberados2; //vector que guarda a los procesos que se vayan liberando de memoria para luego usar como estadisticas de turnaround y pagefaults
 
 //Funcion que hace el swapping unicamente para procesos recien creados que no quepan en memoria principal
-void swap_creados(int pagina, float id, float(&M)[128][4], float(&S)[256][4], int politica, bool creado) {
+void swap_creados(int pagina, float id, float(&M)[128][4], float(&S)[256][4], int politica, bool created) {
     int cont = 0;// se usara para ir contando las paginas nuevas
     while (pagina > 0) {//mientras que no se acabe de cargar el proceso en swap a la memoria real no se acaba
         float temporal = 999999;// para comparar el timestamp y ver cuales es el first in en memoria real
@@ -70,34 +70,36 @@ void swap_creados(int pagina, float id, float(&M)[128][4], float(&S)[256][4], in
                 break;
             }
         }
+        if (!created) {//se checa si es el proceso es nuevo o ya fue agregado al vector de agregados
+            if (politica == 1) {
+                proceso temp(id, tiempo);//se crea un temporal objeto proceso para poder pushear el proceso despues a agregados
+                temp.paginas = pagina;//se asigna la cantidad de paginas del proceso
+                created = true;
+                agregados.push_back(temp);//se agrega el nuevo proceso creado
+            }
+            if(politica == 2){
+                proceso temp(id, tiempo2);//se crea un temporal objeto proceso para poder pushear el proceso despues a agregados
+                temp.paginas = pagina;//se asigna la cantidad de paginas del proceso
+                created = true;
+                agregados2.push_back(temp);//se agrega el nuevo proceso creado
+            }
+        }
         M[tempoIndice][0] = id;//se cambia el id al nuevo proceso
         M[tempoIndice][1] = cont;//se asigna el numero de pagina del proceso
         cont++;
         if (politica == 1) {
             M[tempoIndice][2] = tiempo;//time stamp de la pagina
             tiempo = tiempo + 1;//se modifico algo entonces se agrega 1 segundo
-            if (creado) {
+            if (created) {
                 agregados.back().pagefaultsFIFO++;//se genero un page fault por eso se agrega al contador
             }
         }
-        else
+        if(politica == 2)
         {
             M[tempoIndice][2] = tiempo2;//time stap de la pagina
             tiempo2 = tiempo2 +1;//se modifico algo entonces se agrega 1 segundo
-            if (creado) {
+            if (created) {
                 agregados2.back().pagefaultsLRU++;//se genero un page fault por eso se agrega al contador
-            }
-        }
-
-        if (!creado) {//se checa si es el proceso es nuevo o ya fue agregado al vector de agregados
-            proceso temp(id, tiempo);//se crea un temporal objeto proceso para poder pushear el proceso despues a agregados
-            temp.paginas = pagina;//se asigna la cantidad de paginas del proceso
-            creado = true;
-            if (politica == 1) {
-                agregados.push_back(temp);//se agrega el nuevo proceso creado
-            }
-            else {
-                agregados2.push_back(temp);//se agrega el nuevo proceso creado
             }
         }
         M[tempoIndice][3] = tempoIndice;// se asigna el la direccion de memoria
@@ -127,15 +129,18 @@ void cargar(float bytes, float id, float(&M)[128][4], float(&S)[256][4], int pol
             M[i][3] = i;
             pagina--;
             if (!creado) {
-                proceso Nuevo(id, tiempo); //Creacion de un nuevo proceso, con su respectivo ID proveido por el usuario
-                Nuevo.paginas = tempPaginas;
                 if (politica == 1) {
+                    proceso Nuevo(id, tiempo); //Creacion de un nuevo proceso, con su respectivo ID proveido por el usuario
+                    Nuevo.paginas = tempPaginas;
                     agregados.push_back(Nuevo);//se agrega el nuevo proceso creado
+                    creado = true;
                 }
                 else {
+                    proceso Nuevo(id, tiempo2); //Creacion de un nuevo proceso, con su respectivo ID proveido por el usuario
+                    Nuevo.paginas = tempPaginas;
                     agregados2.push_back(Nuevo);//se agrega el nuevo proceso creado
+                    creado = true;
                 }
-                creado = true;
             }
         }
         if (i == 127) {//En caso de que no se pueda meter el proceso, se hace swapping
@@ -413,16 +418,23 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
 void estadisticas() {
     float sumFIFO = 0;//se usara para sacar los promedio y estadisticas de FIFO
     float sumLRU = 0;//se usara para sacar los promedio y estadisticas de LRU
-    for (int i = 0; i < liberados.size(); i++) {
-        cout << "Tunaround del proceso " << liberados[i].idp << " con politica FIFO: " << liberados[i].turnaroundFIFO << endl;
-        sumFIFO = sumFIFO + liberados[i].turnaroundFIFO;
-        cout << "Tunaround del proceso " << liberados2[i].idp << " con politica LRU: " << liberados2[i].turnaroundLRU << endl;
-        sumLRU = sumLRU + liberados2[i].turnaroundLRU;
-        cout << "Numero de pagefaults del proceso " << liberados[i].idp << " con politica FIFO: " << liberados[i].pagefaultsFIFO << endl;
-        cout << "Numero de pagefaults del proceso " << liberados2[i].idp << " con politica LRU: " << liberados2[i].pagefaultsLRU << endl;
+    float tam1 = liberados.size(), tam2 = liberados2.size();
+    while(!liberados.empty()){
+        cout << "Tunaround del proceso " << liberados.back().idp << " con politica FIFO: " << liberados.back().turnaroundFIFO << endl;
+        sumFIFO = sumFIFO + liberados.back().turnaroundFIFO;
+        cout << "Numero de pagefaults del proceso " << liberados.back().idp << " con politica FIFO: " << liberados.back().pagefaultsFIFO << endl;
+        liberados.pop_back();
     }
-    float promedioFIFO = sumFIFO / (liberados.size());
-    float promedioLRU = sumLRU / (liberados2.size());
+
+    while(!liberados2.empty()) {
+        cout << "Tunaround del proceso " << liberados2.back().idp << " con politica LRU: " << liberados2.back().turnaroundLRU << endl;
+        sumLRU = sumLRU + liberados2.back().turnaroundLRU;
+        cout << "Numero de pagefaults del proceso " << liberados2.back().idp << " con politica LRU: " << liberados2.back().pagefaultsLRU << endl;
+        liberados2.pop_back();
+    }
+
+    float promedioFIFO = sumFIFO / tam1;
+    float promedioLRU = sumLRU / tam2;
 
     cout << "Turnaround promedio con politica FIFO: " << promedioFIFO << endl;
     cout << "Turnaround promedio con politica LRU: " << promedioLRU << endl;
