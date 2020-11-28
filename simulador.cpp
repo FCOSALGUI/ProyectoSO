@@ -99,7 +99,7 @@ void swap_creados(int pagina, float id, float(&M)[128][4], float(&S)[256][4], in
             M[tempoIndice][2] = tiempo2;//time stap de la pagina
             tiempo2 = tiempo2 +1;//se modifico algo entonces se agrega 1 segundo
             if (created) {
-                agregados2.back().pagefaultsLRU++;//se genero un page fault por eso se agrega al contador
+                agregados.back().pagefaultsLRU++;//se genero un page fault por eso se agrega al contador
             }
         }
         M[tempoIndice][3] = tempoIndice;// se asigna el la direccion de memoria
@@ -230,16 +230,16 @@ void FIFO(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[
                                 S[i][2] = -1;
                                 S[i][3] = -1;
 
-                                cout << "Pagina " << S[x][1] << " del proceso " << S[x][0] << " swapeada al marco " << x << " del area de swapping" << endl;
-                                cout << "Se localizo la pagina " << M[ind][1] << " que estaba en la posicion " << i << " de swapping y cargo al marco " << ind << endl;
-                                real = (direccion % 16) + k * 16;//para saber la direccion real en memoria
-                                if (modificacion == 1) {//saber si se modificara o no
-                                    cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
-                                }
-                                cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
-                                tiempo = tiempo + 0.1;
-                                swapsFIFO++;
-                                break;
+                                    cout << "Pagina " << S[x][1] << " del proceso " << S[x][0] << " swapeada al marco " << x << " del area de swapping" << endl;
+                                    cout << "Se localizo la pagina " << M[ind][1] << " que estaba en la posicion " << i << " de swapping y cargo al marco " << ind << endl;
+                                    real = (direccion % 16) + k * 16;//para saber la direccion real en memoria
+                                    if (modificacion == 1) {//saber si se modificara o no
+                                        cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
+                                    }
+                                    cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
+                                    tiempo = tiempo + 0.1;
+                                    swapsFIFO++;
+                                    break;
                             }
                         }
                     }
@@ -268,9 +268,9 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
         }
 
         if (k == 127) {//si se llega al final de la memoria real se entra aqui
-            for (int i = 0; i < agregados2.size(); i++) {//se busca en todos los procesos agregados en el sistema
-                if (agregados2[i].idp == id) {// si se encuentra se id se agrega un page fault
-                    agregados2[i].pagefaultsLRU++;
+            for (int i = 0; i < agregados.size(); i++) {//se busca en todos los procesos agregados en el sistema
+                if (agregados[i].idp == id) {// si se encuentra se id se agrega un page fault
+                    agregados[i].pagefaultsLRU++;
                 }
             }
             for (int i = 0; i < 256; i++) {//se busca en toda la memoria virtual
@@ -299,16 +299,16 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
                                 S[i][2] = -1;
                                 S[i][3] = -1;
 
-                                cout << "Pagina " << S[x][1] << " del proceso " << S[x][0] << " swapeada al marco " << x << " del area de swapping" << endl;
-                                cout << "Se localizo la pagina " << M[ind][1] << " que estaba en la posicion " << i << " de swapping y cargo al marco " << ind << endl;
-                                real = (direccion % 16) + k * 16;//se busca la direccion real de proceso
-                                if (modificacion == 1) {//para saber si se modifico algo y desplegar que paso
-                                    cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
-                                }
-                                cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
-                                tiempo2 = tiempo2 + 0.1;
-                                swapsLRU++;
-                                break;
+                                    cout << "Pagina " << S[x][1] << " del proceso " << S[x][0] << " swapeada al marco " << x << " del area de swapping" << endl;
+                                    cout << "Se localizo la pagina " << M[ind][1] << " que estaba en la posicion " << i << " de swapping y cargo al marco " << ind << endl;
+                                    real = (direccion % 16) + k * 16;//se busca la direccion real de proceso
+                                    if (modificacion == 1) {//para saber si se modifico algo y desplegar que paso
+                                        cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
+                                    }
+                                    cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
+                                    tiempo2 = tiempo2 + 0.1;
+                                    swapsLRU++;
+                                    break;
                             }
                         }
                     }
@@ -319,6 +319,7 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
 }
 
 void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
+    int aux = 0;
     if(politica == 1){
         cout << "FIFO: Liberar los marcos de paginas ocupados por el proceso: " << id << endl;
     }
@@ -347,17 +348,21 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
     else if (vect.size() > 1) {//si es mas de una pagina borrada se va aqui a imprimir cuales eran
         cout << "Se liberan los marcos de pagina de memoria real ";
         for (int i = 0; i < vect.size(); i++) {//un ciclo viendo cuantas paginas fueron borradas
-            cout << vect[i] << "-";//se imprime donde empieza el rango de paginas borradas
-            while (vect[i] == vect[i + 1] - 1 && i< vect.size()-1) {//si la pagina que sigue es el mimso numero si se le resta uno es que es consiguiente
+            aux = 0;
+            cout << vect[i];//se imprime donde empieza el rango de paginas borradas
+            while (vect[i] == vect[i + 1] - 1 && i< vect.size()-1) {//si la pagina que sigue es el mismo numero si se le resta uno es que es consiguiente
                 i++;
+                aux++;
             }
-            if (i != vect.size() - 1) {//esto si todavia no es la ultima vuelta se imprime la parte final del rango
-                cout << vect[i] << ", " << endl;
+            if (aux>0) {//esto si todavia no es la ultima vuelta se imprime la parte final del rango
+                cout << "-" << vect[i] << ", ";
             }
-            else if(i == vect.size()-1){//esta parte es para imprimir si es la ultima pagina y no es consiguiente de las anteriores
-                cout << vect[i] << endl;
+            else{
+                cout << ", ";
             }
         }
+        cout << endl;
+        aux = 0;
     }
     vector<int> vect2;
     for (int i = 0; i < 256; i++) {//se ve toda la memoria virtual para saber cuales son las paginas que se tienen que borrar que tienen el id del proceso a borrar
@@ -381,21 +386,25 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
     else if (vect2.size() > 1) {//si es mas de una pagina borrada se va aqui a imprimir cuales eran
         cout << "Se liberan los marcos de pagina del area de swapping ";
         for (int i = 0; i < vect2.size(); i++) {//un ciclo viendo cuantas paginas fueron borradas
-            cout << vect2[i] << "-";//se imprime donde empieza el rango de paginas borradas
+            aux = 0;
+            cout << vect2[i];//se imprime donde empieza el rango de paginas borradas
             while (vect2[i] == vect2[i + 1] - 1 && i < vect2.size()-1) {//si la pagina que sigue es el mimso numero si se le resta uno es que es consiguiente
                 i++;
+                aux++;
             }
-            if (i != vect2.size() - 1) {//esto si todavia no es la ultima vuelta se imprime la parte final del rango
-                cout << vect2[i] << ", " << endl;
+            if (aux>0) {//esto si todavia no es la ultima vuelta se imprime la parte final del rango
+                cout << "-" << vect2[i] << ", ";
             }
-            else if(i == vect2.size()-1){//esta parte es para imprimir si es la ultima pagina y no es consiguiente de las anteriores
-                cout << vect2[i] << endl;
+            else{//esta parte es para imprimir si es la ultima pagina y no es consiguiente de las anteriores
+                cout << ", ";
             }
         }
+        cout << endl;
+        aux = 0;
     }
-    for (int i = 0; i < agregados.size(); i++) {//el tamano de numero de procesos en el sistema, y se usara para ver el tiempo de turnaround al borrarlo
-        if (politica == 1) {//si es FIFO
-            if (agregados[i].idp == id) {//se checa el id para saber cual es el que se borro y luego se actualiza su turnaround time
+    if (politica == 1) {//se checa el id para saber cual es el que se borro y luego se actualiza su turnaround time
+        for (int i = 0; i < agregados.size(); i++) {//el tamano de numero de procesos en el sistema, y se usara para ver el tiempo de turnaround al borrarlo
+            if (agregados[i].idp == id) {//si es FIFO
                 agregados[i].turnaroundFIFO = tiempo - agregados[i].timestamp;
                 //las siguientes lineas son para poner el proceso borrado en un lugar para saber su informacion
                 liberados.push_back(agregados[i]);
@@ -403,43 +412,67 @@ void borrarProceso(int id, float(&M)[128][4], float(&S)[256][4], int politica) {
                 agregados.pop_back();
             }
         }
-        else{//si es LRU
-            if (agregados2[i].idp == id) {//se checa el id para saber cual es el que se borro y luego se actualiza su turnaround time
-                agregados2[i].turnaroundLRU = tiempo2 - agregados2[i].timestamp;
-                //las siguientes lineas son para poner el proceso borrado en un lugar para saber su informacion
-                liberados2.push_back(agregados2[i]);
-                agregados2[i] = agregados2[agregados2.size() - 1];
-                agregados2.pop_back();
+    }
+    else{
+        for (int i = 0; i < liberados.size(); i++) {//el tamano de numero de procesos en el sistema, y se usara para ver el tiempo de turnaround al borrarlo
+            if (liberados[i].idp == id) {//si es FIFO
+                liberados[i].turnaroundLRU = tiempo2 - liberados[i].timestamp;
             }
         }
     }
 }
 
-void estadisticas() {
+//Funcion que calcula las estadisticas
+void estadisticas(float(&M)[128][4], float(&S)[256][4], float(&ML)[128][4], float(&SL)[256][4]) {
     float sumFIFO = 0;//se usara para sacar los promedio y estadisticas de FIFO
     float sumLRU = 0;//se usara para sacar los promedio y estadisticas de LRU
-    float tam1 = liberados.size(), tam2 = liberados2.size();
+    float tam = liberados.size();
+    float promedioFIFO = 0;
+    float promedioLRU = 0;
     while(!liberados.empty()){
         cout << "Tunaround del proceso " << liberados.back().idp << " con politica FIFO: " << liberados.back().turnaroundFIFO << endl;
+        cout << "Tunaround del proceso " << liberados.back().idp << " con politica LRU: " << liberados.back().turnaroundLRU << endl;
         sumFIFO = sumFIFO + liberados.back().turnaroundFIFO;
+        sumLRU = sumLRU + liberados.back().turnaroundLRU;
         cout << "Numero de pagefaults del proceso " << liberados.back().idp << " con politica FIFO: " << liberados.back().pagefaultsFIFO << endl;
+        cout << "Numero de pagefaults del proceso " << liberados.back().idp << " con politica LRU: " << liberados.back().pagefaultsLRU << endl;
         liberados.pop_back();
     }
 
-    while(!liberados2.empty()) {
-        cout << "Tunaround del proceso " << liberados2.back().idp << " con politica LRU: " << liberados2.back().turnaroundLRU << endl;
-        sumLRU = sumLRU + liberados2.back().turnaroundLRU;
-        cout << "Numero de pagefaults del proceso " << liberados2.back().idp << " con politica LRU: " << liberados2.back().pagefaultsLRU << endl;
-        liberados2.pop_back();
+    if(sumFIFO> 0 && sumLRU > 0 && swapsFIFO > 0 && swapsLRU > 0){
+        promedioFIFO = sumFIFO / tam;
+        promedioLRU = sumLRU / tam;
+        cout << "Turnaround promedio con politica FIFO: " << promedioFIFO << endl;
+        cout << "Turnaround promedio con politica LRU: " << promedioLRU << endl;
+        cout << "Numero total de operaciones swap-out y swap-in en FIFO: " << swapsFIFO << endl;
+        cout << "Numero total de operaciones swap-out y swap-in en LRU: " << swapsLRU << endl;
+    }
+    else{
+        cout << "No existen datos con los cuales se puedan obtener estadisticas" << endl;
     }
 
-    float promedioFIFO = sumFIFO / tam1;
-    float promedioLRU = sumLRU / tam2;
-
-    cout << "Turnaround promedio con politica FIFO: " << promedioFIFO << endl;
-    cout << "Turnaround promedio con politica LRU: " << promedioLRU << endl;
-    cout << "Numero total de operaciones swap-out y swap-in en FIFO: " << swapsFIFO << endl;
-    cout << "Numero total de operaciones swap-out y swap-in en LRU: " << swapsLRU << endl;
+    for (int i = 0; i < 128; i++){//Funcion que reinicia toda la memoria, pues ya se han desplegado todos los resultados
+        M[i][0] = -1;
+        M[i][1] = -1;
+        M[i][2] = -1;
+        M[i][3] = -1;
+        ML[i][0] = -1;
+        ML[i][1] = -1;
+        ML[i][2] = -1;
+        ML[i][3] = -1;
+    }
+    for (int i = 0; i < 256; i++) {
+        S[i][0] = -1;
+        S[i][1] = -1;
+        S[i][2] = -1;
+        S[i][3] = -1;
+        SL[i][0] = -1;
+        SL[i][1] = -1;
+        SL[i][2] = -1;
+        SL[i][3] = -1;
+    }
+    swapsFIFO = 0;
+    swapsLRU = 0;
 }
 
 int main() {
@@ -474,7 +507,8 @@ int main() {
     bool finish = false;//para saber si ya se acabo el programa
     bool error = false; //para saber si se tiene un error en los comandos introducidos por el archivo y avisarle al usuario, sera true mientras haya error
     char process;//se usa para saber que procedimiento usar
-    string comentario, archEntradaNombre;//se usara para la lectura del archivo
+    string archEntradaNombre;//se usara para la lectura del archivo
+    string comentario;
     cout << "Nombre del archivo (sin extencion (.txt)): ";
     cin >> archEntradaNombre;//se ingresa el nombre del archivo txt
     archEntradaNombre += ".txt";
@@ -482,6 +516,7 @@ int main() {
     if (archEnt.is_open()) {//se ve si existe el archivo
         while (!archEnt.eof()) {//si no se ha acabado de leer todo el archivo sigue leyendo
             float bytes = -1, id = -1, mod = -1, direccion = -1, modificacion = -1; //Variables que mandan los usuarios
+            int aux = 0;
             archEnt >> process;
             switch (process)
             {
@@ -499,13 +534,22 @@ int main() {
                         cout << "Se asignaron los marcos de pagina ";
                         for (int k = 0; k < 127; k++) {
                             if (M[k][0] == id) {
+                                aux = 0;
                                 cout << k;
                                 while (M[k][0] == M[k + 1][0]) {
                                     k++;
+                                    aux++;
                                 }
-                                cout << "-" << k << ", " << endl;
+                                if(aux>0){
+                                    cout << "-" << k << ", ";
+                                }
+                                else{
+                                    cout << ", ";
+                                }
                             }
                         }
+                        cout << endl;
+                        aux = 0;
                         //Output del proceso cargado
                         cout << "LRU: Asignar " << bytes << " bytes al proceso " << id << endl;
                         cargar(bytes, id, ML, SL, 2);
@@ -513,15 +557,24 @@ int main() {
                         cout << "Se asignaron los marcos de pagina ";
                         for (int h = 0; h < 127; h++) {
                             if (ML[h][0] == id) {
+                                aux = 0;
                                 cout << h;
                                 while (ML[h][0] == ML[h + 1][0]) {
                                     h++;
+                                    aux++;
                                     if(h == 127){
                                         break;}
                                 }
-                                cout << "-" << h << ", " << endl;
+                                if(aux>0){
+                                    cout << "-" << h << ", ";
+                                }
+                                else{
+                                    cout << ", ";
+                                }
                             }
                         }
+                        cout << endl;
+                        aux = 0;
                     }
                     if(bytes > 2048){ //Si se excede la capacidad de la memoria principal, no se ingresa el proceso
                             cout << "Error: El proceso excede la capacidad de memoria de 2048 bytes\nNo sera procesado" << endl;
@@ -560,17 +613,18 @@ int main() {
             case 'C':
                 error = false;
                 cout << process << endl;
-                archEnt >> comentario;
+                getline(archEnt, comentario);
                 cout << comentario << endl;
+                //cout << comentario << endl;
                 break;
             case 'F':
                 error = false;
                 cout << process << endl;
-                estadisticas();
+                estadisticas(M, S, ML, SL);
                 break;
             case 'E':
                 error = false;
-                cout << process;
+                cout << "E";
                 break;
             default:
                 if(!error){
@@ -579,6 +633,8 @@ int main() {
                 }
                 break;
             }
+            if(process == 'E')
+                break;
         }
         archEnt.close();
     }
