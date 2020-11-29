@@ -186,15 +186,17 @@ void FIFO(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[
     int real = 0;//queremos ver cual es la direccion real
     int menor = 999999;//se usara para estar viendo cual es el timestamp mas bajo
     int ind = 0;//se usara para saber el indice del proceso a cambiar
+    bool found = false; //Variable que se utiliza para para saber si se ha encontrado el valor en memoria
     cout << "FIFO: Obtener la direccion real correspondiente a la direccion virtual " << direccion << " del proceso " << id << endl;
     for (int k = 0; k < 128; k++) {//se recorre toda la memoria real
-        if (M[k][0] == id && M[k][1] == pagina) {//este if es para saber si es el el proceso buscado y el la pagina correcta
+        if (M[k][0] == id && M[k][1] == pagina && !found) {//este if es para saber si es el el proceso buscado y el la pagina correcta
             real = (direccion % 16) + k * 16;//la direccion real del proceso a swapear
             if (modificacion == 1) {//es para saber si el proceso se va a modificar
                 cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
             }
             cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
             tiempo = tiempo + 0.1;//se modifica asi que se anade el tiempo a todo el programa
+            found = true;
             break;
         }
 
@@ -205,14 +207,14 @@ void FIFO(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[
                 }
             }
             for (int i = 0; i < 256; i++) {//se busca en la memoria virtual
-                if (S[i][0] == id && S[i][1] == pagina) {//se busca si se encuentra el proceso y la pagina a swapear en la memoria virtual
+                if (S[i][0] == id && S[i][1] == pagina && !found) {//se busca si se encuentra el proceso y la pagina a swapear en la memoria virtual
                     for (int j = 0; j < 128; j++) {//se busca en la memoria real cual es el que tiene el timestamp mas chico
                         if (M[j][2] < menor) {
                             menor = M[j][2];
                             ind = j;
                         }
                         for (int x = 0; x < 256; x++) {//Se busca encontrar un espacio en memoria virtual para poder guardar los procesos swapeados
-                            if (S[x][0] == -1) {
+                            if (S[x][0] == -1 && !found) {
                                 S[x][0] = M[ind][0];//el id del proceso swapeado
                                 S[x][1] = M[ind][1]; //el numero de pagina del proceso
                                 S[x][2] = tiempo;//el timestamp al momento de swapear
@@ -231,7 +233,7 @@ void FIFO(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[
                                 S[i][3] = -1;
 
                                     cout << "Pagina " << S[x][1] << " del proceso " << S[x][0] << " swapeada al marco " << x << " del area de swapping" << endl;
-                                    cout << "Se localizo la pagina " << M[ind][1] << " que estaba en la posicion " << i << " de swapping y cargo al marco " << ind << endl;
+                                    cout << "Se localizo la pagina " << M[ind][1] << " que estaba en la posicion " << i << " de swapping y se cargo al marco " << ind << endl;
                                     real = (direccion % 16) + k * 16;//para saber la direccion real en memoria
                                     if (modificacion == 1) {//saber si se modificara o no
                                         cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
@@ -239,10 +241,15 @@ void FIFO(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[
                                     cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
                                     tiempo = tiempo + 0.1;
                                     swapsFIFO++;
+                                    found = true;
                                     break;
                             }
                         }
                     }
+                }
+                if(i == 255 && !found){
+                    cout << "No se encontro el proceso en memoria o la pagina solicitada" << endl;
+                    break;
                 }
             }
         }
@@ -254,9 +261,10 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
     int real = 0;//queremos ver cual es la direccion real
     int menor = 999999;//se usara para estar viendo cual es el timestamp mas bajo
     int ind = 0;//se usara para saber el indice del proceso a cambiar
+    bool found = false; //Variable que se utiliza para para saber si se ha encontrado el valor en memoria
     cout << "LRU: Obtener la direccion real correspondiente a la direccion virtual " << direccion << " del proceso " << id << endl;
     for (int k = 0; k < 128; k++) {//se recorre toda la memoria real
-        if (M[k][0] == id && M[k][1] == pagina) {//este if es para saber si es el el proceso buscado y el la pagina correcta
+        if (M[k][0] == id && M[k][1] == pagina && !found) {//este if es para saber si es el el proceso buscado y el la pagina correcta
             real = (direccion % 16) + k * 16;//la direccion real del proceso a swapear
             if (modificacion == 1) {//es para saber si el proceso se va a modificar
                 cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
@@ -264,6 +272,7 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
             cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
             M[k][2] = tiempo2;//como se uso se cambia el timestamp porque en LRU se ocupa la ultima vez usada
             tiempo2 = tiempo2 + 0.1;//se modifica asi que se anade el tiempo a todo el programa
+            found = true;
             break;
         }
 
@@ -274,14 +283,14 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
                 }
             }
             for (int i = 0; i < 256; i++) {//se busca en toda la memoria virtual
-                if (S[i][0] == id && S[i][1] == pagina) {//se busca el proceso id y la pagina correcta
+                if (S[i][0] == id && S[i][1] == pagina && !found) {//se busca el proceso id y la pagina correcta
                     for (int j = 0; j < 128; j++) {//se busca cual es el timestamp mas viejo o chico en memoria real
                         if (M[j][2] < menor) {
                             menor = M[j][2];
                             ind = j;
                         }
                         for (int x = 0; x < 256; x++) {//Se busca encontrar un espacio en memoria virtual para poder guardar los procesos swapeados
-                            if (S[x][0] == -1) {
+                            if (S[x][0] == -1 && !found) {
                                 S[x][0] = M[ind][0];//el id del proceso swapeado
                                 S[x][1] = M[ind][1]; //el numero de pagina del proceso
                                 S[x][2] = tiempo2;//el timestamp al momento de swapear
@@ -300,7 +309,7 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
                                 S[i][3] = -1;
 
                                     cout << "Pagina " << S[x][1] << " del proceso " << S[x][0] << " swapeada al marco " << x << " del area de swapping" << endl;
-                                    cout << "Se localizo la pagina " << M[ind][1] << " que estaba en la posicion " << i << " de swapping y cargo al marco " << ind << endl;
+                                    cout << "Se localizo la pagina " << M[ind][1] << " que estaba en la posicion " << i << " de swapping y se cargo al marco " << ind << endl;
                                     real = (direccion % 16) + k * 16;//se busca la direccion real de proceso
                                     if (modificacion == 1) {//para saber si se modifico algo y desplegar que paso
                                         cout << "y modificar dicha direccion" << "\nPagina " << M[k][1] << " del proceso " << M[k][0] << " modificada " << endl;
@@ -308,10 +317,15 @@ void LRU(int direccion, int id, int modificacion, float(&M)[128][4], float(&S)[2
                                     cout << "Direccion virtual: " << direccion << " Direccion real: " << real << endl;
                                     tiempo2 = tiempo2 + 0.1;
                                     swapsLRU++;
+                                    found = true;
                                     break;
                             }
                         }
                     }
+                }
+                if(i == 255 && !found){
+                    cout << "No se encontro el proceso en memoria o la pagina solicitada" << endl;
+                    break;
                 }
             }
         }
@@ -633,13 +647,16 @@ int main() {
                 }
                 break;
             }
-            if(process == 'E')
+            if(process == 'E'){
+                cout << endl;
                 break;
+            }
         }
         archEnt.close();
     }
     else {//si no existe el archivo que se ingreso se regresa que no se pudo abrir
         cout << "Archivo no abrio" << endl;
     }
+    system("pause");
     return EXIT_SUCCESS;
 }
