@@ -629,7 +629,6 @@ int main() {
                 cout << process << endl;
                 getline(archEnt, comentario);
                 cout << comentario << endl;
-                //cout << comentario << endl;
                 break;
             case 'F':
                 error = false;
